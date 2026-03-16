@@ -1,95 +1,82 @@
-# Deploy GitHub -> Hostinger (Next.js + Node.js)
+# Deploy GitHub -> Hostinger Business (Next.js fullstack)
 
-Tai lieu nay dung cho monorepo gom:
+Du an nay da gop backend (Express) vao Next.js API Routes.
+Deploy truc tiep tu root repo.
 
-- frontend: Next.js
-- backend: Node.js Express API
+## Cau truc
 
-## 1) Cau truc khuyen nghi cho Hostinger
+```
+truyen_tranh/
+  src/
+    app/
+      api/              <-- API routes (thay the backend Express)
+        health/
+        manga/
+          featured/
+          search/
+          list/popular/
+          list/latest/
+          [id]/
+          [id]/recommendations/
+      page.tsx           <-- cac trang frontend
+    lib/
+      api.ts             <-- client goi API (fetch)
+      mangaService.ts    <-- service goi Jikan API (logic tu backend)
+    types/
+      manga.ts
+  backend/               <-- giu lai de tham khao, KHONG deploy
+  package.json
+  next.config.ts
+```
 
-Giu nguyen 2 app tach rieng trong 1 repo:
+## Cai dat tren Hostinger (GitHub deploy)
 
-- frontend chay o domain chinh: https://domain.com
-- backend chay o subdomain API: https://api.domain.com
+| Setting            | Gia tri                                    |
+| ------------------ | ------------------------------------------ |
+| Framework Preset   | Next.js                                    |
+| Git repository     | https://github.com/Hvduct99/truyen-tranh   |
+| Branch             | main                                       |
+| Root directory     | / (root)                                   |
+| Node.js version    | 20.x                                       |
+| Build command      | npm install && npm run build               |
+| Run command        | npm start                                  |
+| Output directory   | .next                                      |
+| Domain             | hathanh.blog                               |
 
-Ly do:
+## Environment Variables (dat tren Hostinger)
 
-- deploy doc lap, rollback de hon
-- khong phai tron Next server va API server vao cung mot process
-- CORS, env va SSL ro rang
+```
+NEXT_PUBLIC_API_URL=https://hathanh.blog
+JIKAN_API_URL=https://api.jikan.moe/v4
+```
 
-## 2) Ket noi repo GitHub
+Giai thich:
+- NEXT_PUBLIC_API_URL: URL cua chinh trang web (de server-side fetch goi API routes cua chinh no)
+- JIKAN_API_URL: URL cua Jikan public API (nguon du lieu manga)
 
-Chay tai thu muc goc du an:
+## Kiem tra sau deploy
 
-1. git init
-2. git branch -M main
-3. git remote add origin https://github.com/Hvduct99/truyen-tranh.git
-4. git add .
-5. git commit -m "chore: prepare hostinger deployment"
-6. git push -u origin main
-
-Neu da co remote origin truoc do thi dung:
-
-- git remote set-url origin https://github.com/Hvduct99/truyen-tranh.git
-
-## 3) Cai dat tren Hostinger (2 app)
-
-Tao 2 Node.js App trong Hostinger:
-
-### App A - Backend API
-
-- Git repository: https://github.com/Hvduct99/truyen-tranh
-- Branch: main
-- Application root: backend
-- Build command: npm install
-- Start command: npm start
-- Domain: api.domain.com
-
-Environment variables:
-
-- NODE_ENV=production
-- PORT=5000
-- FRONTEND_URL=https://domain.com
-- JIKAN_API_URL=https://api.jikan.moe/v4
-
-Health check:
-
-- https://api.domain.com/api/health
-
-### App B - Frontend Next.js
-
-- Git repository: https://github.com/Hvduct99/truyen-tranh
-- Branch: main
-- Application root: frontend
-- Build command: npm install ; npm run build
-- Start command: npm start
-- Domain: domain.com
-
-Environment variables:
-
-- NEXT_PUBLIC_API_URL=https://api.domain.com
-
-## 4) DNS can co
-
-- Ban ghi cho domain chinh tro vao app frontend
-- Ban ghi cho api.domain.com tro vao app backend
-
-## 5) Kiem tra sau deploy
-
-1. API health tra ve JSON status ok
-2. Trang home load danh sach manga
-3. Search hoat dong
+1. https://hathanh.blog/api/health -> tra ve `{"status":"ok","timestamp":"..."}`
+2. Trang chu load danh sach manga
+3. Tim kiem hoat dong
 4. Trang chi tiet manga mo duoc
 
-## 6) Loi hay gap va cach xu ly
+## Loi hay gap
 
-- CORS error: kiem tra FRONTEND_URL backend co dung domain frontend
-- Frontend goi sai API: kiem tra NEXT_PUBLIC_API_URL
-- Build fail do Node version: dat Node >= 20 tren Hostinger
-- 502/503 sau deploy: xem log app backend/frontend, restart app
+| Loi                  | Nguyen nhan                                         | Cach xu ly                                |
+| -------------------- | --------------------------------------------------- | ----------------------------------------- |
+| Build fail           | Node version < 20                                   | Chon Node.js 20.x tren Hostinger         |
+| 500 khi goi API      | Thieu JIKAN_API_URL env                             | Them env tren Hostinger                   |
+| Trang trang khi load | NEXT_PUBLIC_API_URL sai hoac thieu                  | Dat dung domain cua ban                   |
+| Anh manga khong hien | next.config.ts thieu remotePatterns                 | Kiem tra config images                    |
+| Rate limit tu Jikan  | Goi qua nhieu request                              | App tu dong dung fallback data            |
 
-## 7) Luu y van hanh
+## Phat trien local
 
-- Day la trang catalog metadata tu public API (Jikan), khong host noi dung scan
-- Neu traffic tang, nen bo sung reverse proxy cache (Nginx/Cloudflare)
+```bash
+npm install
+npm run dev
+```
+
+App chay tai http://localhost:3000, API routes tu dong hoat dong tai /api/*.
+Khong can chay backend rieng nua.
