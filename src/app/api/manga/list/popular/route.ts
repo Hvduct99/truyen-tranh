@@ -5,9 +5,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const limit = Number(searchParams.get("limit") || 24);
-    const page = Number(searchParams.get("page") || 1);
+    const offset = Number(searchParams.get("offset") || 0);
 
-    const data = await getPopularManga(limit, page);
+    const data = await getPopularManga(limit, offset);
     return NextResponse.json(data);
   } catch (error) {
     console.error("getPopularManga error:", error);

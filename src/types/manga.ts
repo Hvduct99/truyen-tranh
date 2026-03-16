@@ -1,3 +1,5 @@
+/* ── MangaDex normalised types ── */
+
 export interface MangaTag {
   id: string;
   name: string;
@@ -6,56 +8,50 @@ export interface MangaTag {
 export interface Manga {
   id: string;
   title: string;
-  titleEnglish: string;
-  titleJapanese: string | null;
-  synopsis: string;
-  background: string;
+  altTitles: string[];
+  description: string;
   status: string;
   year: number | null;
-  score: number | null;
-  scoredBy: number | null;
-  rank: number | null;
-  popularity: number | null;
-  members: number | null;
-  favorites: number | null;
-  chapters: number | null;
-  volumes: number | null;
-  type: string;
-  demographic: string | null;
-  genres: MangaTag[];
-  themes: MangaTag[];
+  contentRating: string;
+  tags: MangaTag[];
   authors: string[];
-  serializations: string[];
-  imageUrl: string | null;
-  imageThumb: string | null;
-  officialUrl: string | null;
+  artists: string[];
+  coverUrl: string | null;
+  coverThumb: string | null;
+  lastChapter: string | null;
+  lastVolume: string | null;
 }
 
-export interface Recommendation {
+export interface Chapter {
   id: string;
-  title: string;
-  imageUrl: string | null;
-  votes: number;
-  officialUrl: string | null;
+  chapter: string | null;
+  title: string | null;
+  volume: string | null;
+  language: string;
+  pages: number;
+  publishAt: string;
+  scanlationGroup: string | null;
+}
+
+export interface ChapterPage {
+  url: string;
+  urlHD: string;
+}
+
+export interface ChapterPagesResponse {
+  pages: ChapterPage[];
 }
 
 export interface MangaListResponse {
   data: Manga[];
-  total?: number;
-  page?: number;
-  limit?: number;
-  pagination?: {
-    has_next_page?: boolean;
-    current_page?: number;
-    last_visible_page?: number;
-    items?: {
-      count?: number;
-      total?: number;
-      per_page?: number;
-    };
-  };
+  total: number;
+  offset: number;
+  limit: number;
 }
 
-export interface RecommendationResponse {
-  data: Recommendation[];
+export interface ChapterListResponse {
+  data: Chapter[];
+  total: number;
+  offset: number;
+  limit: number;
 }

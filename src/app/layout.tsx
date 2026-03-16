@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MangaVerse Vietnam",
+  title: "MangaVerse Vietnam - Doc truyen tranh online",
   description:
-    "Khám phá manga kinh điển và hiện đại với trải nghiệm Next.js đẹp, nhanh, sẵn sàng deploy lên Hostinger.",
+    "Doc truyen tranh online mien phi. Hang ngan bo manga cap nhat lien tuc tu MangaDex.",
 };
 
 export default function RootLayout({

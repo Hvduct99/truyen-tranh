@@ -1,495 +1,214 @@
-import axios from "axios";
-import NodeCache from "node-cache";
-import type { Manga, Recommendation } from "@/types/manga";
+import type {
+  Manga,
+  Chapter,
+  ChapterPage,
+  MangaListResponse,
+  ChapterListResponse,
+  ChapterPagesResponse,
+} from "@/types/manga";
 
-const API_BASE = process.env.JIKAN_API_URL || "https://api.jikan.moe/v4";
-const cache = new NodeCache({ stdTTL: 300 });
+const API = "https://api.mangadex.org";
 
-const FEATURED_TITLES = [
-  "One Piece",
-  "Naruto",
-  "One Punch-Man",
-  "Jujutsu Kaisen",
-  "Berserk",
-  "Vagabond",
-  "Bleach",
-  "Hunter x Hunter",
-];
+/* ── helpers ── */
 
-const FALLBACK_MANGA: Manga[] = [
-  {
-    id: "13",
-    title: "One Piece",
-    titleEnglish: "One Piece",
-    titleJapanese: "ONE PIECE",
-    synopsis:
-      "Monkey D. Luffy lên đường chinh phục Grand Line để trở thành Vua Hải Tặc trong một hành trình dài hơi, vui nhộn và giàu cảm xúc.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Publishing",
-    year: 1997,
-    score: 9.2,
-    scoredBy: null,
-    rank: 1,
-    popularity: 1,
-    members: 500000,
-    favorites: 120000,
-    chapters: null,
-    volumes: null,
-    type: "Manga",
-    demographic: "Shounen",
-    genres: [{ id: "1", name: "Adventure" }, { id: "2", name: "Action" }],
-    themes: [{ id: "101", name: "Pirates" }],
-    authors: ["Eiichiro Oda"],
-    serializations: ["Weekly Shounen Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/13/One_Piece",
-  },
-  {
-    id: "11",
-    title: "Naruto",
-    titleEnglish: "Naruto",
-    titleJapanese: "NARUTO -ナルト-",
-    synopsis:
-      "Naruto Uzumaki theo đuổi giấc mơ trở thành Hokage trong thế giới ninja khốc liệt nhưng đầy tình đồng đội.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Finished",
-    year: 1999,
-    score: 8.1,
-    scoredBy: null,
-    rank: 12,
-    popularity: 2,
-    members: 430000,
-    favorites: 68000,
-    chapters: 700,
-    volumes: 72,
-    type: "Manga",
-    demographic: "Shounen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Adventure" }],
-    themes: [{ id: "102", name: "Martial Arts" }],
-    authors: ["Masashi Kishimoto"],
-    serializations: ["Weekly Shounen Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/11/Naruto",
-  },
-  {
-    id: "44347",
-    title: "One Punch-Man",
-    titleEnglish: "One-Punch Man",
-    titleJapanese: "ワンパンマン",
-    synopsis:
-      "Saitama mạnh đến mức hạ gục mọi đối thủ chỉ bằng một cú đấm, kéo theo loạt bi kịch hài hước về ý nghĩa của sức mạnh tuyệt đối.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Publishing",
-    year: 2012,
-    score: 8.7,
-    scoredBy: null,
-    rank: 7,
-    popularity: 3,
-    members: 320000,
-    favorites: 45000,
-    chapters: null,
-    volumes: null,
-    type: "Manga",
-    demographic: "Seinen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Comedy" }],
-    themes: [{ id: "103", name: "Super Power" }],
-    authors: ["ONE", "Yusuke Murata"],
-    serializations: ["Tonari no Young Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/44347/One_Punch-Man",
-  },
-  {
-    id: "113138",
-    title: "Jujutsu Kaisen",
-    titleEnglish: "Jujutsu Kaisen",
-    titleJapanese: "呪術廻戦",
-    synopsis:
-      "Yuji Itadori bị cuốn vào thế giới chú thuật sau khi nuốt phải vật thể nguyền rủa, mở ra chuỗi trận chiến đậm nhịp hiện đại.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Finished",
-    year: 2018,
-    score: 8.5,
-    scoredBy: null,
-    rank: 10,
-    popularity: 5,
-    members: 290000,
-    favorites: 40000,
-    chapters: 271,
-    volumes: 30,
-    type: "Manga",
-    demographic: "Shounen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Supernatural" }],
-    themes: [{ id: "104", name: "School" }],
-    authors: ["Gege Akutami"],
-    serializations: ["Weekly Shounen Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/113138/Jujutsu_Kaisen",
-  },
-  {
-    id: "2",
-    title: "Berserk",
-    titleEnglish: "Berserk",
-    titleJapanese: "ベルセルク",
-    synopsis:
-      "Guts đi xuyên một thế giới fantasy tăm tối với nỗi đau, thù hận và ý chí sinh tồn gần như không thể phá vỡ.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Publishing",
-    year: 1989,
-    score: 9.4,
-    scoredBy: null,
-    rank: 2,
-    popularity: 6,
-    members: 260000,
-    favorites: 97000,
-    chapters: null,
-    volumes: null,
-    type: "Manga",
-    demographic: "Seinen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Drama" }],
-    themes: [{ id: "105", name: "Psychological" }],
-    authors: ["Kentaro Miura"],
-    serializations: ["Young Animal"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/2/Berserk",
-  },
-  {
-    id: "656",
-    title: "Vagabond",
-    titleEnglish: "Vagabond",
-    titleJapanese: "バガボンド",
-    synopsis:
-      "Cuộc đời Miyamoto Musashi được tái hiện bằng nét vẽ đỉnh cao và nhịp triết lý sâu về con đường kiếm sĩ.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Hiatus",
-    year: 1998,
-    score: 9.2,
-    scoredBy: null,
-    rank: 3,
-    popularity: 11,
-    members: 180000,
-    favorites: 54000,
-    chapters: 327,
-    volumes: 37,
-    type: "Manga",
-    demographic: "Seinen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Historical" }],
-    themes: [{ id: "106", name: "Samurai" }],
-    authors: ["Takehiko Inoue"],
-    serializations: ["Morning"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/656/Vagabond",
-  },
-  {
-    id: "12",
-    title: "Bleach",
-    titleEnglish: "Bleach",
-    titleJapanese: "BLEACH",
-    synopsis:
-      "Ichigo Kurosaki trở thành Shinigami thay thế và bị cuốn vào xung đột giữa linh hồn, Hollow và Soul Society.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Finished",
-    year: 2001,
-    score: 7.9,
-    scoredBy: null,
-    rank: 28,
-    popularity: 9,
-    members: 220000,
-    favorites: 31000,
-    chapters: 686,
-    volumes: 74,
-    type: "Manga",
-    demographic: "Shounen",
-    genres: [{ id: "1", name: "Action" }, { id: "2", name: "Supernatural" }],
-    themes: [{ id: "107", name: "Mythology" }],
-    authors: ["Tite Kubo"],
-    serializations: ["Weekly Shounen Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/12/Bleach",
-  },
-  {
-    id: "26",
-    title: "Hunter x Hunter",
-    titleEnglish: "Hunter x Hunter",
-    titleJapanese: "HUNTER×HUNTER",
-    synopsis:
-      "Gon Freecss bước vào kỳ thi Hunter để tìm cha và dần lột ra những tầng nghĩa rất tối phía sau một thế giới tưởng như phiêu lưu trẻ trung.",
-    background: "Fallback catalog data used when public API is rate-limited.",
-    status: "Publishing",
-    year: 1998,
-    score: 8.8,
-    scoredBy: null,
-    rank: 6,
-    popularity: 8,
-    members: 250000,
-    favorites: 52000,
-    chapters: null,
-    volumes: 38,
-    type: "Manga",
-    demographic: "Shounen",
-    genres: [{ id: "1", name: "Adventure" }, { id: "2", name: "Fantasy" }],
-    themes: [{ id: "108", name: "Strategy" }],
-    authors: ["Yoshihiro Togashi"],
-    serializations: ["Weekly Shounen Jump"],
-    imageUrl: null,
-    imageThumb: null,
-    officialUrl: "https://myanimelist.net/manga/26/Hunter_x_Hunter",
-  },
-];
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-const mangaApi = axios.create({
-  baseURL: API_BASE,
-  timeout: 15000,
-  headers: { "User-Agent": "TruyenTranhCatalog/1.0" },
-});
-
-function stripHtml(value: string | null | undefined): string {
-  return (value || "").replace(/<[^>]*>/g, "").trim();
+function title(attrs: any): string {
+  if (!attrs.title) return "Unknown";
+  return (
+    attrs.title.vi ||
+    attrs.title.en ||
+    attrs.title["ja-ro"] ||
+    attrs.title.ja ||
+    Object.values(attrs.title)[0] ||
+    "Unknown"
+  ) as string;
 }
 
-function normalizeManga(item: any): Manga {
-  return {
-    id: String(item.mal_id),
-    title: item.title,
-    titleEnglish: item.title_english || item.title,
-    titleJapanese: item.title_japanese || null,
-    synopsis: stripHtml(item.synopsis),
-    background: stripHtml(item.background),
-    status: item.status || "Unknown",
-    year: item.published?.prop?.from?.year || null,
-    score: item.score || null,
-    scoredBy: item.scored_by || null,
-    rank: item.rank || null,
-    popularity: item.popularity || null,
-    members: item.members || null,
-    favorites: item.favorites || null,
-    chapters: item.chapters || null,
-    volumes: item.volumes || null,
-    type: item.type || "Manga",
-    demographic: item.demographics?.[0]?.name || null,
-    genres: (item.genres || []).map((g: any) => ({
-      id: String(g.mal_id),
-      name: g.name,
-    })),
-    themes: (item.themes || []).map((t: any) => ({
-      id: String(t.mal_id),
-      name: t.name,
-    })),
-    authors: (item.authors || []).map((a: any) => a.name),
-    serializations: (item.serializations || []).map((s: any) => s.name),
-    imageUrl:
-      item.images?.webp?.large_image_url ||
-      item.images?.jpg?.large_image_url ||
-      item.images?.jpg?.image_url ||
-      null,
-    imageThumb:
-      item.images?.webp?.image_url || item.images?.jpg?.image_url || null,
-    officialUrl: item.url || null,
-  };
-}
-
-function buildListResponse(payload: any, page: number, limit: number) {
-  return {
-    data: payload.data.map(normalizeManga),
-    pagination: payload.pagination,
-    page,
-    limit,
-  };
-}
-
-async function requestWithFallback<T>(
-  requestFactory: () => Promise<T>,
-  fallbackValue: T,
-  cacheKey: string,
-  ttl = 300
-): Promise<T> {
-  const cached = cache.get<T>(cacheKey);
-  if (cached) return cached;
-
-  try {
-    const result = await requestFactory();
-    cache.set(cacheKey, result, ttl);
-    return result;
-  } catch (error: any) {
-    const status = error.response?.status;
-    console.error(
-      `External manga API failure (${cacheKey}):`,
-      status || error.message
-    );
-    cache.set(cacheKey, fallbackValue, 120);
-    return fallbackValue;
+function altTitles(attrs: any): string[] {
+  if (!Array.isArray(attrs.altTitles)) return [];
+  const out: string[] = [];
+  for (const obj of attrs.altTitles) {
+    for (const v of Object.values(obj)) if (v) out.push(v as string);
   }
+  return out.slice(0, 5);
 }
 
-export async function getFeaturedManga() {
-  const cacheKey = "featured_manga";
-  const fallback = { data: FALLBACK_MANGA, total: FALLBACK_MANGA.length };
-
-  return requestWithFallback(async () => {
-    const results = await Promise.all(
-      FEATURED_TITLES.map(async (title) => {
-        const response = await mangaApi.get("/manga", {
-          params: { q: title, limit: 1, order_by: "popularity", sort: "asc", sfw: true },
-        });
-        return response.data.data[0] || null;
-      })
-    );
-    const data = results.filter(Boolean).map(normalizeManga);
-    return { data, total: data.length };
-  }, fallback, cacheKey, 1800);
-}
-
-export async function searchManga(query: string, limit = 20, page = 1) {
-  const cacheKey = `search_${query}_${limit}_${page}`;
-  const filtered = FALLBACK_MANGA.filter((item) =>
-    item.title.toLowerCase().includes(query.toLowerCase())
+function description(attrs: any): string {
+  if (!attrs.description) return "";
+  return (
+    (attrs.description.vi || attrs.description.en || Object.values(attrs.description)[0] || "") as string
   );
-  const fallback = {
-    data: filtered,
-    page,
-    limit,
-    pagination: {
-      current_page: 1,
-      has_next_page: false,
-      last_visible_page: 1,
-      items: { count: filtered.length, total: filtered.length, per_page: limit },
-    },
-  };
-
-  return requestWithFallback(async () => {
-    const response = await mangaApi.get("/manga", {
-      params: {
-        q: query,
-        limit: Math.min(limit, 24),
-        page,
-        order_by: "score",
-        sort: "desc",
-        sfw: true,
-      },
-    });
-    return buildListResponse(response.data, page, limit);
-  }, fallback, cacheKey, 300);
 }
 
-export async function getMangaById(id: string) {
-  const cacheKey = `manga_${id}`;
-  const fallback =
-    FALLBACK_MANGA.find((item) => item.id === String(id)) || FALLBACK_MANGA[0];
-
-  return requestWithFallback(async () => {
-    const response = await mangaApi.get(
-      `/manga/${encodeURIComponent(id)}/full`
-    );
-    return normalizeManga(response.data.data);
-  }, fallback, cacheKey, 1800);
+function coverFile(item: any): string | null {
+  const rel = (item.relationships || []).find((r: any) => r.type === "cover_art");
+  return rel?.attributes?.fileName || null;
 }
 
-export async function getPopularManga(limit = 24, page = 1) {
-  const cacheKey = `popular_${limit}_${page}`;
-  const fallback = {
-    data: FALLBACK_MANGA.slice(0, Math.min(limit, FALLBACK_MANGA.length)),
-    page,
-    limit,
-    pagination: {
-      current_page: 1,
-      has_next_page: false,
-      last_visible_page: 1,
-      items: {
-        count: Math.min(limit, FALLBACK_MANGA.length),
-        total: FALLBACK_MANGA.length,
-        per_page: limit,
-      },
-    },
-  };
-
-  return requestWithFallback(async () => {
-    const response = await mangaApi.get("/top/manga", {
-      params: {
-        limit: Math.min(limit, 24),
-        page,
-        filter: "publishing",
-        sfw: true,
-      },
-    });
-    return buildListResponse(response.data, page, limit);
-  }, fallback, cacheKey, 600);
+function coverUrl(mangaId: string, fileName: string | null, size?: string): string | null {
+  if (!fileName) return null;
+  const base = `https://uploads.mangadex.org/covers/${mangaId}/${fileName}`;
+  return size ? `${base}.${size}.jpg` : base;
 }
 
-export async function getLatestManga(limit = 24, page = 1) {
-  const cacheKey = `latest_${limit}_${page}`;
-  const fallback = {
-    data: [...FALLBACK_MANGA]
-      .reverse()
-      .slice(0, Math.min(limit, FALLBACK_MANGA.length)),
-    page,
-    limit,
-    pagination: {
-      current_page: 1,
-      has_next_page: false,
-      last_visible_page: 1,
-      items: {
-        count: Math.min(limit, FALLBACK_MANGA.length),
-        total: FALLBACK_MANGA.length,
-        per_page: limit,
-      },
-    },
-  };
-
-  return requestWithFallback(async () => {
-    const response = await mangaApi.get("/manga", {
-      params: {
-        limit: Math.min(limit, 24),
-        page,
-        order_by: "start_date",
-        sort: "desc",
-        type: "manga",
-        sfw: true,
-      },
-    });
-    return buildListResponse(response.data, page, limit);
-  }, fallback, cacheKey, 600);
+function authorName(item: any, type: string): string[] {
+  return (item.relationships || [])
+    .filter((r: any) => r.type === type && r.attributes?.name)
+    .map((r: any) => r.attributes.name as string);
 }
 
-export async function getMangaRecommendations(id: string) {
-  const cacheKey = `recommendations_${id}`;
-  const fallback = {
-    data: FALLBACK_MANGA.filter((item) => item.id !== String(id))
-      .slice(0, 4)
-      .map((item, index): Recommendation => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: item.imageUrl,
-        votes: 100 - index * 7,
-        officialUrl: item.officialUrl,
-      })),
+function normaliseManga(item: any): Manga {
+  const a = item.attributes;
+  const file = coverFile(item);
+  return {
+    id: item.id,
+    title: title(a),
+    altTitles: altTitles(a),
+    description: description(a),
+    status: a.status || "unknown",
+    year: a.year || null,
+    contentRating: a.contentRating || "safe",
+    tags: (a.tags || []).map((t: any) => ({
+      id: t.id,
+      name: t.attributes?.name?.en || t.attributes?.name?.vi || "Unknown",
+    })),
+    authors: authorName(item, "author"),
+    artists: authorName(item, "artist"),
+    coverUrl: coverUrl(item.id, file),
+    coverThumb: coverUrl(item.id, file, "256"),
+    lastChapter: a.lastChapter || null,
+    lastVolume: a.lastVolume || null,
   };
+}
 
-  return requestWithFallback(async () => {
-    const response = await mangaApi.get(
-      `/manga/${encodeURIComponent(id)}/recommendations`
-    );
-    return {
-      data: (response.data.data || []).slice(0, 8).map(
-        (entry: any): Recommendation => ({
-          id: String(entry.entry.mal_id),
-          title: entry.entry.title,
-          imageUrl:
-            entry.entry.images?.webp?.large_image_url ||
-            entry.entry.images?.jpg?.large_image_url ||
-            entry.entry.images?.jpg?.image_url ||
-            null,
-          votes: entry.votes || 0,
-          officialUrl: entry.entry.url || null,
-        })
-      ),
-    };
-  }, fallback, cacheKey, 1800);
+function normaliseChapter(item: any): Chapter {
+  const a = item.attributes;
+  const group = (item.relationships || []).find((r: any) => r.type === "scanlation_group");
+  return {
+    id: item.id,
+    chapter: a.chapter || null,
+    title: a.title || null,
+    volume: a.volume || null,
+    language: a.translatedLanguage || "en",
+    pages: a.pages || 0,
+    publishAt: a.publishAt || a.createdAt || "",
+    scanlationGroup: group?.attributes?.name || null,
+  };
+}
+
+async function mdFetch(path: string, params?: Record<string, string | string[]>) {
+  const url = new URL(`${API}${path}`);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (Array.isArray(v)) {
+        for (const item of v) url.searchParams.append(k, item);
+      } else {
+        url.searchParams.set(k, v);
+      }
+    }
+  }
+  const res = await fetch(url.toString(), { next: { revalidate: 300 } });
+  if (!res.ok) {
+    throw new Error(`MangaDex ${res.status}: ${url.pathname}`);
+  }
+  return res.json();
+}
+
+/* ── public API ── */
+
+const INCLUDES = ["cover_art", "author", "artist"];
+
+export async function getPopularManga(limit = 24, offset = 0): Promise<MangaListResponse> {
+  const data = await mdFetch("/manga", {
+    "includes[]": INCLUDES,
+    "order[followedCount]": "desc",
+    "contentRating[]": ["safe", "suggestive"],
+    limit: String(Math.min(limit, 32)),
+    offset: String(offset),
+    "availableTranslatedLanguage[]": ["vi", "en"],
+  });
+  return {
+    data: data.data.map(normaliseManga),
+    total: data.total,
+    offset: data.offset,
+    limit: data.limit,
+  };
+}
+
+export async function getLatestManga(limit = 24, offset = 0): Promise<MangaListResponse> {
+  const data = await mdFetch("/manga", {
+    "includes[]": INCLUDES,
+    "order[latestUploadedChapter]": "desc",
+    "contentRating[]": ["safe", "suggestive"],
+    limit: String(Math.min(limit, 32)),
+    offset: String(offset),
+    "availableTranslatedLanguage[]": ["vi", "en"],
+  });
+  return {
+    data: data.data.map(normaliseManga),
+    total: data.total,
+    offset: data.offset,
+    limit: data.limit,
+  };
+}
+
+export async function searchManga(query: string, limit = 20, offset = 0): Promise<MangaListResponse> {
+  const data = await mdFetch("/manga", {
+    title: query,
+    "includes[]": INCLUDES,
+    "contentRating[]": ["safe", "suggestive"],
+    "order[relevance]": "desc",
+    limit: String(Math.min(limit, 32)),
+    offset: String(offset),
+  });
+  return {
+    data: data.data.map(normaliseManga),
+    total: data.total,
+    offset: data.offset,
+    limit: data.limit,
+  };
+}
+
+export async function getMangaById(id: string): Promise<Manga> {
+  const data = await mdFetch(`/manga/${id}`, {
+    "includes[]": INCLUDES,
+  });
+  return normaliseManga(data.data);
+}
+
+export async function getChapters(
+  mangaId: string,
+  limit = 96,
+  offset = 0,
+  lang?: string
+): Promise<ChapterListResponse> {
+  const languages = lang ? [lang] : ["vi", "en"];
+  const data = await mdFetch(`/manga/${mangaId}/feed`, {
+    "translatedLanguage[]": languages,
+    "includes[]": ["scanlation_group"],
+    "order[chapter]": "asc",
+    limit: String(Math.min(limit, 96)),
+    offset: String(offset),
+    "contentRating[]": ["safe", "suggestive"],
+  });
+  return {
+    data: (data.data || []).map(normaliseChapter),
+    total: data.total,
+    offset: data.offset,
+    limit: data.limit,
+  };
+}
+
+export async function getChapterPages(chapterId: string): Promise<ChapterPagesResponse> {
+  const data = await mdFetch(`/at-home/server/${chapterId}`);
+  const base = data.baseUrl;
+  const hash = data.chapter.hash;
+  const pages: ChapterPage[] = (data.chapter.data || []).map((file: string, i: number) => ({
+    url: `${base}/data-saver/${hash}/${data.chapter.dataSaver?.[i] || file}`,
+    urlHD: `${base}/data/${hash}/${file}`,
+  }));
+  return { pages };
+}
+
+export async function getFeaturedManga(): Promise<MangaListResponse> {
+  return getPopularManga(8, 0);
 }

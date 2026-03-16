@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const q = searchParams.get("q");
     const limit = Number(searchParams.get("limit") || 20);
-    const page = Number(searchParams.get("page") || 1);
+    const offset = Number(searchParams.get("offset") || 0);
 
     if (!q) {
       return NextResponse.json(
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await searchManga(q, limit, page);
+    const data = await searchManga(q, limit, offset);
     return NextResponse.json(data);
   } catch (error) {
     console.error("searchManga error:", error);
