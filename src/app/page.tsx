@@ -1,6 +1,5 @@
 import HeroSection from "@/components/HeroSection";
 import MangaGridSection from "@/components/MangaGridSection";
-import StatStrip from "@/components/StatStrip";
 import { getFeaturedManga, getLatestManga, getPopularManga } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -8,26 +7,23 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [featured, popular, latest] = await Promise.all([
     getFeaturedManga(),
-    getPopularManga(8),
-    getLatestManga(8),
+    getPopularManga(10),
+    getLatestManga(10),
   ]);
 
   return (
-    <div className="pb-20 pt-24 md:pt-28">
-      <HeroSection featured={featured.data.slice(0, 4)} />
-      <StatStrip />
-      <div className="mx-auto flex max-w-7xl flex-col gap-14 px-4 sm:px-6 lg:px-8">
+    <div className="pt-16 pb-12">
+      <div className="mt-6">
+        <HeroSection featured={featured.data.slice(0, 5)} />
+      </div>
+      <div className="container-main space-y-10">
         <MangaGridSection
-          title="Manga pho bien nhat"
-          eyebrow="Top followed"
-          description="Nhung bo truyen duoc theo doi nhieu nhat tren MangaDex."
+          title="Phổ biến"
           items={popular.data}
           href="/popular"
         />
         <MangaGridSection
-          title="Moi cap nhat"
-          eyebrow="Latest updates"
-          description="Cac bo truyen vua co chapter moi, cap nhat lien tuc."
+          title="Mới cập nhật"
           items={latest.data}
           href="/latest"
         />

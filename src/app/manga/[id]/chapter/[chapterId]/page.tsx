@@ -39,19 +39,23 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   const nextChapterId =
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1].id : null;
 
+  const chapterNum = current?.chapter || "?";
   const chapterTitle = current
-    ? `Chapter ${current.chapter || "?"}${current.title ? `: ${current.title}` : ""}`
+    ? `Chapter ${chapterNum}${current.title ? `: ${current.title}` : ""}`
     : "Chapter";
 
   return (
-    <div className="-mt-16">
+    <div className="-mt-14">
       <ChapterReader
         pages={pagesData.pages}
         chapterTitle={chapterTitle}
+        chapterNum={chapterNum}
         mangaId={id}
         mangaTitle={manga.title}
+        mangaCover={manga.coverThumb}
         prevChapterId={prevChapterId}
         nextChapterId={nextChapterId}
+        currentChapterId={chapterId}
       />
     </div>
   );

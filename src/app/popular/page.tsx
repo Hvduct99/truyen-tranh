@@ -1,23 +1,30 @@
 import MangaGridSection from "@/components/MangaGridSection";
+import Pagination from "@/components/Pagination";
 import { getPopularManga } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Manga pho bien | MangaVerse Vietnam",
+  title: "Manga phổ biến | MangaVerse",
 };
 
-export default async function PopularPage() {
-  const popular = await getPopularManga(24);
+interface PopularPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function PopularPage({ searchParams }: PopularPageProps) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10));
+  const limit = 24;
+  const offset = (page - 1) * limit;
+
+  const data = await getPopularManga(limit, offset);
+  const totalPages = Math.ceil(data.total / limit);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 lg:px-8">
-      <MangaGridSection
-        title="Manga pho bien"
-        eyebrow="Most followed"
-        description="Nhung bo truyen duoc yeu thich va theo doi nhieu nhat tren MangaDex."
-        items={popular.data}
-      />
+    <div className="container-main pt-20 pb-12">
+      <MangaGridSection title="Manga phổ biến" items={data.data} />
+      <Pagination currentPage={page} totalPages={totalPages} baseUrl="/popular" />
     </div>
   );
 }

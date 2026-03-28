@@ -1,20 +1,32 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
-    <footer className="relative z-10 mt-20 border-t border-white/10 bg-slate-950/70">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 text-sm text-slate-400 sm:px-6 lg:px-8 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-2xl">
-          <p className="font-display text-lg font-semibold text-white">
-            MangaVerse Vietnam
-          </p>
-          <p className="mt-2 leading-7 text-slate-400">
-            Doc truyen tranh online mien phi tu MangaDex. Ung dung nay khong luu
-            tru noi dung truyen, chi doc tu API cong khai cua MangaDex.
-          </p>
+    <footer className="border-t border-border mt-16">
+      <div className="container-main py-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center">
+                <span className="text-white font-semibold text-xs">M</span>
+              </div>
+              <span className="text-sm font-semibold text-txt">MangaVerse</span>
+            </Link>
+            <p className="mt-2 text-xs text-txt-muted leading-5 max-w-md">
+              Đọc truyện tranh online miễn phí. Dữ liệu từ MangaDex API.
+              Ứng dụng không lưu trữ nội dung truyện.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-txt-muted">
+            <Link href="/popular" className="hover:text-txt transition-colors">Phổ biến</Link>
+            <Link href="/latest" className="hover:text-txt transition-colors">Mới nhất</Link>
+            <Link href="/genre" className="hover:text-txt transition-colors">Thể loại</Link>
+            <Link href="/history" className="hover:text-txt transition-colors">Lịch sử</Link>
+            <Link href="/bookmark" className="hover:text-txt transition-colors">Yêu thích</Link>
+          </div>
         </div>
-        <div className="space-y-2 text-right text-slate-500">
-          <p>Nguon: MangaDex API</p>
-          <p>Next.js + Tailwind CSS</p>
-          <p>Hostinger Business</p>
+        <div className="mt-6 pt-4 border-t border-border text-xs text-txt-muted">
+          Nguồn dữ liệu: MangaDex API &middot; Next.js + Tailwind CSS
         </div>
       </div>
     </footer>

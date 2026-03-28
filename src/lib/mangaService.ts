@@ -212,3 +212,42 @@ export async function getChapterPages(chapterId: string): Promise<ChapterPagesRe
 export async function getFeaturedManga(): Promise<MangaListResponse> {
   return getPopularManga(8, 0);
 }
+
+/* ── Tags / Genres ── */
+
+export interface MangaTagFull {
+  id: string;
+  name: string;
+  group: string;
+}
+
+export async function getMangaTags(): Promise<MangaTagFull[]> {
+  const data = await mdFetch("/manga/tag");
+  return (data.data || []).map((t: any) => ({
+    id: t.id,
+    name: t.attributes?.name?.en || t.attributes?.name?.vi || "Unknown",
+    group: t.attributes?.group || "genre",
+  }));
+}
+
+export async function getMangaByTag(
+  tagId: string,
+  limit = 24,
+  offset = 0
+): Promise<MangaListResponse> {
+  const data = await mdFetch("/manga", {
+    "includes[]": INCLUDES,
+    "includedTags[]": [tagId],
+    "order[followedCount]": "desc",
+    "contentRating[]": ["safe", "suggestive"],
+    limit: String(Math.min(limit, 32)),
+    offset: String(offset),
+    "availableTranslatedLanguage[]": ["vi", "en"],
+  });
+  return {
+    data: data.data.map(normaliseManga),
+    total: data.total,
+    offset: data.offset,
+    limit: data.limit,
+  };
+}

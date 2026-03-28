@@ -1,101 +1,102 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Manga } from "@/types/manga";
 
 export default function HeroSection({ featured }: { featured: Manga[] }) {
   const lead = featured[0];
+  if (!lead) return null;
 
   return (
-    <section className="relative mx-auto mb-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-900/80 px-6 py-10 backdrop-blur-xl md:px-10 md:py-12"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.22),_transparent_28%),radial-gradient(circle_at_80%_20%,_rgba(249,115,22,0.2),_transparent_26%)]" />
-          <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">
-              Doc truyen tranh online
-            </div>
-            <h1 className="mt-6 text-4xl font-black leading-tight text-white md:text-6xl">
-              Doc truyen tranh mien phi, cap nhat nhanh, giao dien dep.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
-              Hang ngan bo manga tu MangaDex. Tim kiem, doc chapter, cuon doc hoac lat trang. Uu tien ban dich tieng Viet.
+    <section className="container-main mb-10">
+      {/* Main featured banner */}
+      <div className="card overflow-hidden">
+        <div className="relative flex flex-col md:flex-row">
+          {/* Cover */}
+          <div className="relative w-full md:w-72 lg:w-80 shrink-0 aspect-[3/4] md:aspect-auto md:h-auto bg-bg-hover">
+            {lead.coverUrl && (
+              <Image
+                src={lead.coverUrl}
+                alt={lead.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 320px"
+                className="object-cover"
+                priority
+                unoptimized
+              />
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
+            <span className="text-xs font-medium text-accent uppercase tracking-wider">
+              Nổi bật
+            </span>
+            <h2 className="mt-2 text-2xl lg:text-3xl font-semibold text-txt leading-tight">
+              {lead.title}
+            </h2>
+            {lead.authors.length > 0 && (
+              <p className="mt-2 text-sm text-txt-secondary">
+                {lead.authors.join(", ")}
+              </p>
+            )}
+            <p className="mt-3 text-sm text-txt-muted leading-relaxed line-clamp-3">
+              {lead.description || "Khám phá bộ manga nổi bật này."}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/popular" className="btn-primary text-center">
-                Manga pho bien
-              </Link>
-              <Link
-                href={lead ? `/manga/${lead.id}` : "/latest"}
-                className="btn-ghost text-center"
-              >
-                Doc ngay
-              </Link>
-            </div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {[
-                "Doc mien phi tu MangaDex",
-                "2 che do: cuon & lat trang",
-                "Uu tien ban dich tieng Viet",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200"
-                >
-                  {item}
-                </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {lead.tags.slice(0, 4).map((tag) => (
+                <span key={tag.id} className="tag text-xs">
+                  {tag.name}
+                </span>
               ))}
             </div>
-          </div>
-        </motion.div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          {featured.slice(0, 3).map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/75 p-4"
-            >
-              <Link href={`/manga/${item.id}`} className="flex gap-4">
-                <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-800">
-                  {item.coverThumb ? (
-                    <Image
-                      src={item.coverThumb}
-                      alt={item.title}
-                      fill
-                      sizes="120px"
-                      className="object-cover transition duration-500 group-hover:scale-110"
-                      unoptimized
-                    />
-                  ) : null}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-[0.28em] text-orange-300">
-                    #{index + 1} noi bat
-                  </p>
-                  <h3 className="mt-2 line-clamp-2 text-xl font-semibold text-white">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-400">
-                    {item.description
-                      ? item.description.slice(0, 100) + "..."
-                      : "Kham pha bo manga nay."}
-                  </p>
-                </div>
+            <div className="mt-5 flex gap-3">
+              <Link href={`/manga/${lead.id}`} className="btn-primary">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Đọc ngay
               </Link>
-            </motion.div>
-          ))}
+              <Link href="/popular" className="btn-outline">
+                Xem phổ biến
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Featured row */}
+      {featured.length > 1 && (
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {featured.slice(1, 5).map((item) => (
+            <Link
+              key={item.id}
+              href={`/manga/${item.id}`}
+              className="card-hover flex gap-3 p-3 group"
+            >
+              <div className="relative w-12 h-16 shrink-0 rounded overflow-hidden bg-bg-hover">
+                {item.coverThumb && (
+                  <Image
+                    src={item.coverThumb}
+                    alt={item.title}
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-txt line-clamp-2 group-hover:text-accent transition-colors">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-xs text-txt-muted line-clamp-1">
+                  {item.authors.join(", ") || "Đang cập nhật"}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

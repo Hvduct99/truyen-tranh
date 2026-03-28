@@ -4,28 +4,46 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChapterPage } from "@/types/manga";
+import { addHistory } from "@/lib/storage";
 
 interface ChapterReaderProps {
   pages: ChapterPage[];
   chapterTitle: string;
+  chapterNum: string;
   mangaId: string;
   mangaTitle: string;
+  mangaCover: string | null;
   prevChapterId: string | null;
   nextChapterId: string | null;
+  currentChapterId: string;
 }
 
 export default function ChapterReader({
   pages,
   chapterTitle,
+  chapterNum,
   mangaId,
   mangaTitle,
+  mangaCover,
   prevChapterId,
   nextChapterId,
+  currentChapterId,
 }: ChapterReaderProps) {
   const [mode, setMode] = useState<"scroll" | "page">("scroll");
   const [currentPage, setCurrentPage] = useState(0);
   const [showToolbar, setShowToolbar] = useState(true);
   const [hdMode, setHdMode] = useState(false);
+
+  // Save to history
+  useEffect(() => {
+    addHistory({
+      mangaId,
+      mangaTitle,
+      coverThumb: mangaCover,
+      chapterId: currentChapterId,
+      chapterNum,
+    });
+  }, [mangaId, mangaTitle, mangaCover, currentChapterId, chapterNum]);
 
   const goNext = useCallback(() => {
     if (currentPage < pages.length - 1) {
@@ -56,64 +74,65 @@ export default function ChapterReader({
   if (pages.length === 0) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-slate-400">Khong co trang nao de hien thi.</p>
+        <p className="text-txt-muted text-sm">Không có trang nào để hiển thị.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-dark-950">
-      {/* Toolbar */}
+    <div className="min-h-screen bg-bg">
+      {/* Top toolbar */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-200 ${
           showToolbar ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="bg-dark-950/95 backdrop-blur-xl border-b border-white/10 px-4 py-3">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+        <div className="bg-bg/95 backdrop-blur-sm border-b border-border px-4 py-2.5">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Link
               href={`/manga/${mangaId}`}
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors shrink-0"
+              className="flex items-center gap-2 text-sm text-txt-secondary hover:text-txt transition-colors shrink-0"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="hidden sm:inline">{mangaTitle}</span>
+              <span className="hidden sm:inline truncate max-w-[200px]">{mangaTitle}</span>
             </Link>
-            <p className="text-sm font-medium text-white truncate">{chapterTitle}</p>
+
+            <p className="text-sm text-txt truncate">{chapterTitle}</p>
+
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setHdMode(!hdMode)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 text-xs rounded border transition-colors ${
                   hdMode
-                    ? "bg-cyan-400/20 text-cyan-300 border border-cyan-400/30"
-                    : "bg-white/5 text-slate-400 border border-white/10 hover:text-white"
+                    ? "border-accent text-accent bg-accent-soft"
+                    : "border-border text-txt-muted hover:text-txt hover:border-border-light"
                 }`}
               >
                 HD
               </button>
               <button
                 onClick={() => setMode(mode === "scroll" ? "page" : "scroll")}
-                className="rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                className="px-2.5 py-1 text-xs text-txt-muted border border-border rounded hover:text-txt hover:border-border-light transition-colors"
               >
-                {mode === "scroll" ? "Trang" : "Cuon"}
+                {mode === "scroll" ? "Trang" : "Cuộn"}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Toggle toolbar on click */}
+      {/* Toolbar toggle area */}
       <div
-        className="fixed top-0 left-0 right-0 h-16 z-40 cursor-pointer"
+        className="fixed top-0 left-0 right-0 h-12 z-40 cursor-pointer"
         onClick={() => setShowToolbar(!showToolbar)}
       />
 
-      {/* Reader content */}
-      <div className="pt-16 pb-20">
+      {/* Content */}
+      <div className="pt-14 pb-16">
         {mode === "scroll" ? (
-          /* Scroll mode */
-          <div className="mx-auto max-w-4xl space-y-1">
+          <div className="mx-auto max-w-4xl">
             {pages.map((page, i) => (
               <div key={i} className="relative w-full">
                 <Image
@@ -129,7 +148,6 @@ export default function ChapterReader({
             ))}
           </div>
         ) : (
-          /* Page mode */
           <div className="mx-auto max-w-4xl">
             <div
               className="relative flex items-center justify-center min-h-[70vh] cursor-pointer select-none"
@@ -151,23 +169,21 @@ export default function ChapterReader({
                 unoptimized
               />
             </div>
-            <div className="mt-4 flex items-center justify-center gap-4">
+            <div className="mt-3 flex items-center justify-center gap-3">
               <button
                 onClick={goPrev}
                 disabled={currentPage === 0 && !prevChapterId}
-                className="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm text-slate-400
-                  hover:text-white transition-colors disabled:opacity-30"
+                className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt hover:border-border-light transition-colors disabled:opacity-30"
               >
-                Truoc
+                Trước
               </button>
-              <span className="text-sm text-slate-400">
+              <span className="text-sm text-txt-muted">
                 {currentPage + 1} / {pages.length}
               </span>
               <button
                 onClick={goNext}
                 disabled={currentPage === pages.length - 1 && !nextChapterId}
-                className="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm text-slate-400
-                  hover:text-white transition-colors disabled:opacity-30"
+                className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt hover:border-border-light transition-colors disabled:opacity-30"
               >
                 Sau
               </button>
@@ -177,27 +193,33 @@ export default function ChapterReader({
       </div>
 
       {/* Bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-dark-950/95 backdrop-blur-xl border-t border-white/10 px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-sm border-t border-border px-4 py-2.5">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           {prevChapterId ? (
             <Link
               href={`/manga/${mangaId}/chapter/${prevChapterId}`}
-              className="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+              className="text-sm text-txt-secondary hover:text-txt transition-colors flex items-center gap-1"
             >
-              Chapter truoc
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Chapter trước
             </Link>
           ) : (
             <div />
           )}
-          {mode === "scroll" && (
-            <span className="text-xs text-slate-500">{pages.length} trang</span>
-          )}
+          <span className="text-xs text-txt-muted">
+            {mode === "scroll" ? `${pages.length} trang` : `${currentPage + 1}/${pages.length}`}
+          </span>
           {nextChapterId ? (
             <Link
               href={`/manga/${mangaId}/chapter/${nextChapterId}`}
-              className="rounded-xl bg-cyan-400/10 border border-cyan-400/30 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/20 transition-colors"
+              className="text-sm text-accent hover:text-accent-hover transition-colors flex items-center gap-1"
             >
               Chapter sau
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           ) : (
             <div />

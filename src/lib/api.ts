@@ -70,3 +70,23 @@ export async function getChapterPages(
     `/api/manga/chapter/${encodeURIComponent(chapterId)}/pages`
   );
 }
+
+export interface MangaTagFull {
+  id: string;
+  name: string;
+  group: string;
+}
+
+export async function getMangaTags(): Promise<MangaTagFull[]> {
+  return fetchApi<MangaTagFull[]>("/api/manga/tags");
+}
+
+export async function getMangaByTag(
+  tagId: string,
+  limit = 24,
+  offset = 0
+): Promise<MangaListResponse> {
+  return fetchApi<MangaListResponse>(
+    `/api/manga/by-tag?tagId=${encodeURIComponent(tagId)}&limit=${limit}&offset=${offset}`
+  );
+}
