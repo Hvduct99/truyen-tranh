@@ -5,7 +5,7 @@ import { getLatestManga } from "@/lib/mangaService";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Manga mới nhất | MangaVerse",
+  title: "Truyện mới nhất | MangaVerse",
 };
 
 interface LatestPageProps {
@@ -15,16 +15,14 @@ interface LatestPageProps {
 export default async function LatestPage({ searchParams }: LatestPageProps) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || "1", 10));
-  const limit = 24;
-  const offset = (page - 1) * limit;
 
   try {
-    const data = await getLatestManga(limit, offset);
-    const totalPages = Math.ceil(data.total / limit);
+    const data = await getLatestManga(page);
+    const totalPages = Math.ceil(data.totalItems / data.totalItemsPerPage);
 
     return (
       <div className="container-main pt-20 pb-12">
-        <MangaGridSection title="Manga mới cập nhật" items={data.data} />
+        <MangaGridSection title="Truyện mới cập nhật" items={data.items} />
         <Pagination currentPage={page} totalPages={totalPages} baseUrl="/latest" />
       </div>
     );

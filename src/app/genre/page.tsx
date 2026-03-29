@@ -11,40 +11,17 @@ export default async function GenrePage() {
   try {
     const tags = await getMangaTags();
 
-    const genres = tags.filter((t) => t.group === "genre");
-    const themes = tags.filter((t) => t.group === "theme");
-    const formats = tags.filter((t) => t.group === "format");
-    const others = tags.filter(
-      (t) => t.group !== "genre" && t.group !== "theme" && t.group !== "format"
-    );
-
-    const sections = [
-      { label: "Thể loại", items: genres },
-      { label: "Chủ đề", items: themes },
-      { label: "Định dạng", items: formats },
-      { label: "Khác", items: others },
-    ].filter((s) => s.items.length > 0);
-
     return (
       <div className="container-main pt-20 pb-12">
         <h1 className="section-title mb-6">Duyệt theo thể loại</h1>
-        <div className="space-y-8">
-          {sections.map((section) => (
-            <div key={section.label}>
-              <h2 className="text-sm font-medium text-txt-muted uppercase tracking-wider mb-3">
-                {section.label}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {section.items
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((tag) => (
-                    <Link key={tag.id} href={`/genre/${tag.id}`} className="tag">
-                      {tag.name}
-                    </Link>
-                  ))}
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {tags
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((tag) => (
+              <Link key={tag.id} href={`/genre/${tag.slug}`} className="tag px-4 py-2 text-sm">
+                {tag.name}
+              </Link>
+            ))}
         </div>
       </div>
     );
@@ -53,7 +30,7 @@ export default async function GenrePage() {
     return (
       <div className="container-main pt-20 pb-12">
         <div className="card p-10 text-center">
-          <p className="text-txt-secondary">Không thể tải thể loại. Vui lòng thử lại sau.</p>
+          <p className="text-txt-secondary">Không thể tải thể loại.</p>
         </div>
       </div>
     );

@@ -1,57 +1,60 @@
-/* ── MangaDex normalised types ── */
+/* ── OTruyen API types ── */
 
 export interface MangaTag {
   id: string;
   name: string;
+  slug: string;
+}
+
+export interface ChapterLatest {
+  filename: string;
+  chapter_name: string;
+  chapter_title: string;
+  chapter_api_data: string;
 }
 
 export interface Manga {
   id: string;
-  title: string;
-  altTitles: string[];
+  name: string;
+  slug: string;
+  origin_name: string[];
   description: string;
   status: string;
-  year: number | null;
-  contentRating: string;
-  tags: MangaTag[];
+  thumb_url: string;
   authors: string[];
-  artists: string[];
-  coverUrl: string | null;
-  coverThumb: string | null;
-  lastChapter: string | null;
-  lastVolume: string | null;
+  categories: MangaTag[];
+  updatedAt: string;
+  chaptersLatest: ChapterLatest[];
 }
 
-export interface Chapter {
-  id: string;
-  chapter: string | null;
-  title: string | null;
-  volume: string | null;
-  language: string;
-  pages: number;
-  publishAt: string;
-  scanlationGroup: string | null;
+export interface ChapterInfo {
+  filename: string;
+  chapter_name: string;
+  chapter_title: string;
+  chapter_api_data: string;
 }
 
-export interface ChapterPage {
-  url: string;
-  urlHD: string;
+export interface ChapterImage {
+  image_page: number;
+  image_file: string;
 }
 
-export interface ChapterPagesResponse {
-  pages: ChapterPage[];
+export interface ChapterDetail {
+  chapter_name: string;
+  chapter_title: string;
+  chapter_path: string;
+  domain_cdn: string;
+  images: ChapterImage[];
 }
 
 export interface MangaListResponse {
-  data: Manga[];
-  total: number;
-  offset: number;
-  limit: number;
+  items: Manga[];
+  totalItems: number;
+  currentPage: number;
+  totalItemsPerPage: number;
 }
 
-export interface ChapterListResponse {
-  data: Chapter[];
-  total: number;
-  offset: number;
-  limit: number;
+export interface MangaDetailResponse {
+  manga: Manga;
+  chapters: ChapterInfo[];
 }

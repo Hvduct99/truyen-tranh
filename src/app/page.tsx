@@ -1,31 +1,30 @@
 import HeroSection from "@/components/HeroSection";
 import MangaGridSection from "@/components/MangaGridSection";
-import { getFeaturedManga, getLatestManga, getPopularManga } from "@/lib/mangaService";
+import { getHomeManga, getLatestManga } from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   try {
-    const [featured, popular, latest] = await Promise.all([
-      getFeaturedManga(),
-      getPopularManga(10),
-      getLatestManga(10),
+    const [home, latest] = await Promise.all([
+      getHomeManga(),
+      getLatestManga(1),
     ]);
 
     return (
       <div className="pt-16 pb-12">
         <div className="mt-6">
-          <HeroSection featured={featured.data.slice(0, 5)} />
+          <HeroSection featured={home.items.slice(0, 5)} />
         </div>
         <div className="container-main space-y-10">
           <MangaGridSection
-            title="Phổ biến"
-            items={popular.data}
-            href="/popular"
+            title="Mới cập nhật"
+            items={home.items.slice(0, 10)}
+            href="/latest"
           />
           <MangaGridSection
-            title="Mới cập nhật"
-            items={latest.data}
+            title="Truyện mới"
+            items={latest.items.slice(0, 10)}
             href="/latest"
           />
         </div>
