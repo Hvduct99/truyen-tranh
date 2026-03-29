@@ -1,6 +1,6 @@
 import MangaGridSection from "@/components/MangaGridSection";
 import Pagination from "@/components/Pagination";
-import { getPopularManga } from "@/lib/api";
+import { getPopularManga } from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +18,24 @@ export default async function PopularPage({ searchParams }: PopularPageProps) {
   const limit = 24;
   const offset = (page - 1) * limit;
 
-  const data = await getPopularManga(limit, offset);
-  const totalPages = Math.ceil(data.total / limit);
+  try {
+    const data = await getPopularManga(limit, offset);
+    const totalPages = Math.ceil(data.total / limit);
 
-  return (
-    <div className="container-main pt-20 pb-12">
-      <MangaGridSection title="Manga phổ biến" items={data.data} />
-      <Pagination currentPage={page} totalPages={totalPages} baseUrl="/popular" />
-    </div>
-  );
+    return (
+      <div className="container-main pt-20 pb-12">
+        <MangaGridSection title="Manga phổ biến" items={data.data} />
+        <Pagination currentPage={page} totalPages={totalPages} baseUrl="/popular" />
+      </div>
+    );
+  } catch (error) {
+    console.error("Popular page error:", error);
+    return (
+      <div className="container-main pt-20 pb-12">
+        <div className="card p-10 text-center">
+          <p className="text-txt-secondary">Không thể tải dữ liệu. Vui lòng thử lại sau.</p>
+        </div>
+      </div>
+    );
+  }
 }
