@@ -52,7 +52,7 @@ function normaliseManga(item: any): Manga {
 }
 
 async function apiFetch(url: string) {
-  const res = await fetch(url, { next: { revalidate: 300 } });
+  const res = await fetch(url, { next: { revalidate: 300 } } as any);
   if (!res.ok) {
     throw new Error(`OTruyen API ${res.status}: ${url}`);
   }
@@ -165,6 +165,22 @@ export async function getMangaTags(): Promise<MangaTag[]> {
     name: t.name || "",
     slug: t.slug || "",
   }));
+}
+
+/** Search multiple hot titles at once, return first result for each */
+export async function getHotManga(titles: string[]): Promise<Manga[]> {
+  const results = await Promise.allSettled(
+    titles.map(async (title) => {
+      const res = await searchManga(title, 1);
+      return res.items[0] || null;
+    })
+  );
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<Manga> =>
+        r.status === "fulfilled" && r.value !== null
+    )
+    .map((r) => r.value);
 }
 
 export async function getMangaByGenre(
