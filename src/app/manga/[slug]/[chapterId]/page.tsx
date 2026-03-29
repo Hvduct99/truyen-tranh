@@ -1,20 +1,24 @@
 import Link from "next/link";
 import ChapterReader from "@/components/ChapterReader";
-import { getChapterDetail, getMangaBySlug } from "@/lib/mangaService";
+import {
+  getChapterDetail,
+  getMangaBySlug,
+  buildChapterApiUrl,
+  extractChapterId,
+} from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
 interface ChapterPageProps {
-  params: Promise<{ slug: string; chapterApi: string[] }>;
+  params: Promise<{ slug: string; chapterId: string }>;
 }
 
 export async function generateMetadata({ params }: ChapterPageProps) {
-  const { slug, chapterApi } = await params;
-  const apiUrl = chapterApi.join("/");
+  const { slug, chapterId } = await params;
   try {
     const [{ manga }, chapter] = await Promise.all([
       getMangaBySlug(slug),
-      getChapterDetail(apiUrl),
+      getChapterDetail(buildChapterApiUrl(chapterId)),
     ]);
     return {
       title: `Ch.${chapter.chapter_name} | ${manga.name} | MangaVerse`,
@@ -25,25 +29,28 @@ export async function generateMetadata({ params }: ChapterPageProps) {
 }
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
-  const { slug, chapterApi } = await params;
-  const apiUrl = chapterApi.join("/");
+  const { slug, chapterId } = await params;
 
   try {
     const [{ manga, chapters }, chapter] = await Promise.all([
       getMangaBySlug(slug),
-      getChapterDetail(apiUrl),
+      getChapterDetail(buildChapterApiUrl(chapterId)),
     ]);
 
-    // Find current chapter index and prev/next
+    // Find current chapter and get prev/next IDs
     const currentIndex = chapters.findIndex(
-      (ch) => ch.chapter_name === chapter.chapter_name
+      (ch) => extractChapterId(ch.chapter_api_data) === chapterId
     );
-    const prevChapterApi = currentIndex < chapters.length - 1
-      ? chapters[currentIndex + 1].chapter_api_data
-      : null;
-    const nextChapterApi = currentIndex > 0
-      ? chapters[currentIndex - 1].chapter_api_data
-      : null;
+
+    // chapters array: index 0 = newest, last = oldest
+    const prevChapterId =
+      currentIndex < chapters.length - 1
+        ? extractChapterId(chapters[currentIndex + 1].chapter_api_data)
+        : null;
+    const nextChapterId =
+      currentIndex > 0
+        ? extractChapterId(chapters[currentIndex - 1].chapter_api_data)
+        : null;
 
     return (
       <div className="-mt-14">
@@ -52,8 +59,8 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           mangaSlug={slug}
           mangaName={manga.name}
           mangaThumb={manga.thumb_url}
-          prevChapterApi={prevChapterApi}
-          nextChapterApi={nextChapterApi}
+          prevChapterId={prevChapterId}
+          nextChapterId={nextChapterId}
         />
       </div>
     );
@@ -63,7 +70,9 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
       <div className="container-main pt-20 pb-12">
         <div className="card p-10 text-center">
           <p className="text-txt-secondary">Không thể tải chapter.</p>
-          <Link href={`/manga/${slug}`} className="btn-primary mt-4 inline-flex">Quay lại</Link>
+          <Link href={`/manga/${slug}`} className="btn-primary mt-4 inline-flex">
+            Quay lại
+          </Link>
         </div>
       </div>
     );

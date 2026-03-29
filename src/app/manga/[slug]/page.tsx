@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ChapterList from "@/components/ChapterList";
 import BookmarkButton from "@/components/BookmarkButton";
-import { getMangaBySlug } from "@/lib/mangaService";
+import { getMangaBySlug, extractChapterId } from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,7 @@ export default async function MangaDetailPage({ params }: MangaDetailPageProps) 
     const statusText = manga.status === "completed" ? "Hoàn thành" : "Đang ra";
 
     const firstChapter = chapters.length > 0 ? chapters[chapters.length - 1] : null;
+    const firstChapterId = firstChapter ? extractChapterId(firstChapter.chapter_api_data) : null;
 
     return (
       <div className="container-main pt-20 pb-12">
@@ -85,9 +86,9 @@ export default async function MangaDetailPage({ params }: MangaDetailPageProps) 
               )}
 
               <div className="mt-5 flex flex-wrap gap-3">
-                {firstChapter && (
+                {firstChapterId && (
                   <Link
-                    href={`/manga/${manga.slug}/${firstChapter.chapter_api_data}`}
+                    href={`/manga/${manga.slug}/${firstChapterId}`}
                     className="btn-primary"
                   >
                     Đọc từ đầu

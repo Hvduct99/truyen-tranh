@@ -9,6 +9,18 @@ import type {
 
 const API = "https://otruyenapi.com/v1/api";
 const CDN_IMAGE = "https://img.otruyenapi.com";
+const CHAPTER_API_BASE = "https://sv1.otruyencdn.com/v1/api/chapter";
+
+/** Extract chapter ID from full API URL like https://sv1.otruyencdn.com/v1/api/chapter/xxx */
+export function extractChapterId(apiUrl: string): string {
+  const parts = apiUrl.split("/");
+  return parts[parts.length - 1] || apiUrl;
+}
+
+/** Build chapter API URL from just the ID */
+export function buildChapterApiUrl(chapterId: string): string {
+  return `${CHAPTER_API_BASE}/${chapterId}`;
+}
 
 /* ── helpers ── */
 

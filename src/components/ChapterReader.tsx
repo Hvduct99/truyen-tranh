@@ -11,8 +11,8 @@ interface ChapterReaderProps {
   mangaSlug: string;
   mangaName: string;
   mangaThumb: string;
-  prevChapterApi: string | null;
-  nextChapterApi: string | null;
+  prevChapterId: string | null;
+  nextChapterId: string | null;
 }
 
 export default function ChapterReader({
@@ -20,13 +20,12 @@ export default function ChapterReader({
   mangaSlug,
   mangaName,
   mangaThumb,
-  prevChapterApi,
-  nextChapterApi,
+  prevChapterId,
+  nextChapterId,
 }: ChapterReaderProps) {
   const [mode, setMode] = useState<"scroll" | "page">("scroll");
   const [currentPage, setCurrentPage] = useState(0);
   const [showToolbar, setShowToolbar] = useState(true);
-  const [hdMode, setHdMode] = useState(false);
 
   const pages = chapter.images.map((img) => ({
     url: `${chapter.domain_cdn}/${chapter.chapter_path}/${img.image_file}`,
@@ -42,8 +41,8 @@ export default function ChapterReader({
     });
   }, [mangaSlug, mangaName, mangaThumb, chapter.chapter_name]);
 
-  const prevUrl = prevChapterApi ? `/manga/${mangaSlug}/${prevChapterApi}` : null;
-  const nextUrl = nextChapterApi ? `/manga/${mangaSlug}/${nextChapterApi}` : null;
+  const prevUrl = prevChapterId ? `/manga/${mangaSlug}/${prevChapterId}` : null;
+  const nextUrl = nextChapterId ? `/manga/${mangaSlug}/${nextChapterId}` : null;
 
   const goNext = useCallback(() => {
     if (currentPage < pages.length - 1) {
@@ -94,14 +93,12 @@ export default function ChapterReader({
               <span className="hidden sm:inline truncate max-w-[200px]">{mangaName}</span>
             </Link>
             <p className="text-sm text-txt truncate">{chapterTitle}</p>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => setMode(mode === "scroll" ? "page" : "scroll")}
-                className="px-2.5 py-1 text-xs text-txt-muted border border-border rounded hover:text-txt hover:border-border-light transition-colors"
-              >
-                {mode === "scroll" ? "Trang" : "Cuộn"}
-              </button>
-            </div>
+            <button
+              onClick={() => setMode(mode === "scroll" ? "page" : "scroll")}
+              className="px-2.5 py-1 text-xs text-txt-muted border border-border rounded hover:text-txt hover:border-border-light transition-colors shrink-0"
+            >
+              {mode === "scroll" ? "Trang" : "Cuộn"}
+            </button>
           </div>
         </div>
       </div>
@@ -114,14 +111,13 @@ export default function ChapterReader({
           <div className="mx-auto max-w-4xl">
             {pages.map((page, i) => (
               <div key={i} className="relative w-full">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={page.url}
                   alt={`Trang ${i + 1}`}
-                  width={1200}
-                  height={1800}
                   className="w-full h-auto"
-                  priority={i < 3}
-                  unoptimized
+                  loading={i < 3 ? "eager" : "lazy"}
+                  referrerPolicy="no-referrer"
                 />
               </div>
             ))}
@@ -137,25 +133,19 @@ export default function ChapterReader({
                 else goPrev();
               }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 key={currentPage}
                 src={pages[currentPage].url}
                 alt={`Trang ${currentPage + 1}`}
-                width={1200}
-                height={1800}
                 className="max-h-[85vh] w-auto object-contain"
-                priority
-                unoptimized
+                referrerPolicy="no-referrer"
               />
             </div>
             <div className="mt-3 flex items-center justify-center gap-3">
-              <button onClick={goPrev} disabled={currentPage === 0 && !prevUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">
-                Trước
-              </button>
+              <button onClick={goPrev} disabled={currentPage === 0 && !prevUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">Trước</button>
               <span className="text-sm text-txt-muted">{currentPage + 1} / {pages.length}</span>
-              <button onClick={goNext} disabled={currentPage === pages.length - 1 && !nextUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">
-                Sau
-              </button>
+              <button onClick={goNext} disabled={currentPage === pages.length - 1 && !nextUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">Sau</button>
             </div>
           </div>
         )}

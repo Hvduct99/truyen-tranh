@@ -13,7 +13,7 @@ export default function Footer() {
               <span className="text-sm font-semibold text-txt">MangaVerse</span>
             </Link>
             <p className="mt-2 text-xs text-txt-muted leading-5 max-w-md">
-              Đọc truyện tranh online miễn phí. Dữ liệu từ MangaDex API.
+              Đọc truyện tranh online miễn phí. Dữ liệu từ OTruyen API.
               Ứng dụng không lưu trữ nội dung truyện.
             </p>
           </div>
@@ -26,7 +26,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-6 pt-4 border-t border-border text-xs text-txt-muted">
-          Nguồn dữ liệu: MangaDex API &middot; Next.js + Tailwind CSS
+          Nguồn dữ liệu: OTruyen API &middot; Next.js + Tailwind CSS
         </div>
       </div>
     </footer>

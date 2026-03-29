@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChapterInfo } from "@/types/manga";
+import { extractChapterId } from "@/lib/mangaService";
 
 interface ChapterListProps {
   chapters: ChapterInfo[];
@@ -46,25 +47,28 @@ export default function ChapterList({ chapters, mangaSlug }: ChapterListProps) {
       </div>
 
       <div className="card divide-y divide-border max-h-[600px] overflow-y-auto">
-        {sorted.map((ch, index) => (
-          <Link
-            key={`${ch.chapter_name}-${index}`}
-            href={`/manga/${mangaSlug}/${ch.chapter_api_data}`}
-            className="flex items-center justify-between px-4 py-3 hover:bg-bg-hover transition-colors group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-sm font-medium text-txt-secondary w-14 shrink-0">
-                Ch.{ch.chapter_name}
-              </span>
-              <p className="text-sm text-txt group-hover:text-accent transition-colors truncate">
-                {ch.chapter_title || `Chapter ${ch.chapter_name}`}
-              </p>
-            </div>
-            <svg className="w-3.5 h-3.5 text-txt-muted group-hover:text-accent transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        ))}
+        {sorted.map((ch, index) => {
+          const chId = extractChapterId(ch.chapter_api_data);
+          return (
+            <Link
+              key={`${ch.chapter_name}-${index}`}
+              href={`/manga/${mangaSlug}/${chId}`}
+              className="flex items-center justify-between px-4 py-3 hover:bg-bg-hover transition-colors group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-sm font-medium text-txt-secondary w-14 shrink-0">
+                  Ch.{ch.chapter_name}
+                </span>
+                <p className="text-sm text-txt group-hover:text-accent transition-colors truncate">
+                  {ch.chapter_title || `Chapter ${ch.chapter_name}`}
+                </p>
+              </div>
+              <svg className="w-3.5 h-3.5 text-txt-muted group-hover:text-accent transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
