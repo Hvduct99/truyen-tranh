@@ -167,12 +167,64 @@ export async function getMangaTags(): Promise<MangaTag[]> {
   }));
 }
 
-/** Search multiple hot titles at once, return first result for each */
+const SPINOFF_KEYWORDS = [
+  "ngoại truyện",
+  "ngoai truyen",
+  "spin-off",
+  "spin off",
+  "spinoff",
+  "color",
+  "special",
+  "đặc biệt",
+  "dac biet",
+  "side story",
+  "side-story",
+  "extra",
+  "ngoài lề",
+  "phụ bản",
+  "phu ban",
+  "tiền truyện",
+  "tien truyen",
+  "ova",
+  "remake",
+  "fanbook",
+];
+
+function getHighestChapterNumber(manga: Manga): number {
+  if (!manga.chaptersLatest || manga.chaptersLatest.length === 0) return 0;
+  const nums = manga.chaptersLatest
+    .map((ch) => parseFloat(ch.chapter_name))
+    .filter((n) => !isNaN(n));
+  return nums.length > 0 ? Math.max(...nums) : 0;
+}
+
+/** Search multiple hot titles, prefer the main series (most chapters, no spin-off keywords) */
 export async function getHotManga(titles: string[]): Promise<Manga[]> {
   const results = await Promise.allSettled(
     titles.map(async (title) => {
       const res = await searchManga(title, 1);
-      return res.items[0] || null;
+      if (res.items.length === 0) return null;
+
+      const titleLower = title.toLowerCase();
+
+      // Keep only items whose name actually contains the search title
+      const matching = res.items.filter((m) =>
+        m.name.toLowerCase().includes(titleLower)
+      );
+      const pool = matching.length > 0 ? matching : res.items;
+
+      // Drop obvious spin-offs / side stories
+      const mainOnly = pool.filter((m) => {
+        const n = m.name.toLowerCase();
+        return !SPINOFF_KEYWORDS.some((kw) => n.includes(kw));
+      });
+      const candidates = mainOnly.length > 0 ? mainOnly : pool;
+
+      // Pick the one with the highest chapter number (main series has the most chapters)
+      candidates.sort(
+        (a, b) => getHighestChapterNumber(b) - getHighestChapterNumber(a)
+      );
+      return candidates[0] || null;
     })
   );
   return results
