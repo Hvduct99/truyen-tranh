@@ -1,97 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import CoverImage from "@/components/CoverImage";
 import { getHistory, clearHistory, HistoryEntry } from "@/lib/storage";
+import { timeAgo } from "@/lib/format";
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
 
   useEffect(() => {
-    setHistory(getHistory());
-    setLoaded(true);
+    // one row per manga: the latest chapter read
+    const seen = new Set<string>();
+    setHistory(getHistory().filter((h) => !seen.has(h.mangaId) && seen.add(h.mangaId)));
   }, []);
 
-  const handleClear = () => {
-    clearHistory();
-    setHistory([]);
-  };
-
-  if (!loaded) {
-    return (
-      <div className="container-main pt-20 pb-12">
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-accent" />
-        </div>
-      </div>
-    );
-  }
+  if (!history) return <div className="container-main py-20" />;
 
   return (
-    <div className="container-main pt-20 pb-12">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="section-title">Lịch sử đọc</h1>
-        {history.length > 0 && (
-          <button
-            onClick={handleClear}
-            className="text-sm text-txt-muted hover:text-status-hiatus transition-colors"
-          >
-            Xóa tất cả
-          </button>
+    <div className="container-main py-4">
+      <div className="card p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="section-title">Lịch sử đọc</h1>
+          {history.length > 0 && (
+            <button
+              onClick={() => {
+                clearHistory();
+                setHistory([]);
+              }}
+              className="text-sm text-txt-muted hover:text-status-cancelled"
+            >
+              Xoá tất cả
+            </button>
+          )}
+        </div>
+
+        {history.length === 0 ? (
+          <p className="py-12 text-center text-sm text-txt-muted">Chưa có lịch sử đọc. Đọc truyện để lưu lại tại đây.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {history.map((item) => (
+              <li key={item.mangaId} className="flex items-center gap-3 py-2.5">
+                <Link href={`/manga/${item.mangaId}`} className="shrink-0">
+                  <CoverImage src={item.coverThumb || ""} alt={item.mangaTitle} className="w-12 h-16 rounded" />
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link href={`/manga/${item.mangaId}`} className="block text-sm font-semibold text-txt hover:text-accent truncate">
+                    {item.mangaTitle}
+                  </Link>
+                  <p className="text-xs text-txt-muted mt-0.5">
+                    Đã đọc {item.chapterLabel} · {timeAgo(new Date(item.timestamp).toISOString())}
+                  </p>
+                </div>
+                <Link href={`/manga/${item.mangaId}/${item.chapterId}`} className="btn-primary !py-1.5 !px-3 text-xs shrink-0">
+                  Đọc tiếp
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-
-      {history.length === 0 ? (
-        <div className="card p-10 text-center">
-          <svg
-            className="w-12 h-12 text-txt-muted mx-auto mb-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-txt-secondary">Chưa có lịch sử đọc.</p>
-          <p className="text-sm text-txt-muted mt-1">Đọc truyện để lưu lịch sử tại đây.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {history.map((item) => (
-            <Link
-              key={`${item.chapterId}-${item.timestamp}`}
-              href={`/manga/${item.mangaId}/chapter/${item.chapterId}`}
-              className="card-hover flex items-center gap-3 p-3 group"
-            >
-              <div className="relative w-10 h-14 shrink-0 rounded overflow-hidden bg-bg-hover">
-                {item.coverThumb && (
-                  <Image
-                    src={item.coverThumb}
-                    alt={item.mangaTitle}
-                    fill
-                    sizes="40px"
-                    className="object-cover"
-                    unoptimized
-                  />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-txt group-hover:text-accent transition-colors truncate">
-                  {item.mangaTitle}
-                </p>
-                <p className="text-xs text-txt-muted mt-0.5">
-                  Chapter {item.chapterNum}
-                </p>
-              </div>
-              <span className="text-xs text-txt-muted shrink-0">
-                {new Date(item.timestamp).toLocaleDateString("vi-VN")}
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

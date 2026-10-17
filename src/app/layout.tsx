@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MangaVerse - Đọc truyện tranh online",
   description:
-    "Đọc truyện tranh online miễn phí. Hàng ngàn bộ manga cập nhật liên tục từ MangaDex.",
+    "Đọc truyện tranh online miễn phí, ưu tiên bản dịch tiếng Việt. Hàng ngàn bộ manga cập nhật liên tục.",
 };
 
 export default function RootLayout({

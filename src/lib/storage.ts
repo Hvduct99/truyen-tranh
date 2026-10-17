@@ -5,7 +5,7 @@ export interface HistoryEntry {
   mangaTitle: string;
   coverThumb: string | null;
   chapterId: string;
-  chapterNum: string;
+  chapterLabel: string;
   timestamp: number;
 }
 
@@ -17,8 +17,9 @@ export interface BookmarkEntry {
   timestamp: number;
 }
 
-const HISTORY_KEY = "mangaverse_history";
-const BOOKMARK_KEY = "mangaverse_bookmarks";
+// v2: entries from the old OTruyen source point at dead slugs and images
+const HISTORY_KEY = "mangaverse_v2_history";
+const BOOKMARK_KEY = "mangaverse_v2_bookmarks";
 const MAX_HISTORY = 100;
 
 function getStorage<T>(key: string): T[] {

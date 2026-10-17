@@ -1,60 +1,48 @@
-/* ── OTruyen API types ── */
+/* ── App-level types (normalised from MangaDex) ── */
+
+export type MangaStatus = "ongoing" | "completed" | "hiatus" | "cancelled";
 
 export interface MangaTag {
   id: string;
-  name: string;
-  slug: string;
+  name: string; // Vietnamese label when we have one
+  group: string; // genre | theme | format | content
 }
 
-export interface ChapterLatest {
-  filename: string;
-  chapter_name: string;
-  chapter_title: string;
-  chapter_api_data: string;
+export interface ChapterInfo {
+  id: string;
+  chapter: string | null; // "12", "12.5" or null for oneshots
+  title: string;
+  lang: string; // vi | en
+  publishAt: string;
+  group: string;
 }
 
 export interface Manga {
   id: string;
-  name: string;
-  slug: string;
-  origin_name: string[];
+  title: string;
+  altTitle: string;
   description: string;
-  status: string;
-  thumb_url: string;
+  status: MangaStatus;
+  year: number | null;
+  cover: string; // proxied URL, "" when missing
   authors: string[];
-  categories: MangaTag[];
+  tags: MangaTag[];
   updatedAt: string;
-  chaptersLatest: ChapterLatest[];
+  lastChapter: string | null;
+  latestChapters: ChapterInfo[]; // filled only by the "latest updates" feed
 }
 
-export interface ChapterInfo {
-  filename: string;
-  chapter_name: string;
-  chapter_title: string;
-  chapter_api_data: string;
-}
-
-export interface ChapterImage {
-  image_page: number;
-  image_file: string;
-}
-
-export interface ChapterDetail {
-  chapter_name: string;
-  chapter_title: string;
-  chapter_path: string;
-  domain_cdn: string;
-  images: ChapterImage[];
+export interface ChapterPages {
+  id: string;
+  chapter: string | null;
+  title: string;
+  pages: string[]; // data-saver, proxied
+  pagesHd: string[]; // full quality, proxied
 }
 
 export interface MangaListResponse {
   items: Manga[];
-  totalItems: number;
-  currentPage: number;
-  totalItemsPerPage: number;
-}
-
-export interface MangaDetailResponse {
-  manga: Manga;
-  chapters: ChapterInfo[];
+  total: number;
+  page: number;
+  perPage: number;
 }

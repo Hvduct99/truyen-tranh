@@ -1,7 +1,5 @@
-import Link from "next/link";
-import MangaGridSection from "@/components/MangaGridSection";
-import Pagination from "@/components/Pagination";
-import { getMangaByGenre } from "@/lib/mangaService";
+import MangaListPage, { parsePage } from "@/components/MangaListPage";
+import { getMangaByTag, getTags } from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
@@ -10,42 +8,27 @@ interface GenreDetailPageProps {
   searchParams: Promise<{ page?: string }>;
 }
 
+async function tagName(tagId: string) {
+  try {
+    return (await getTags()).find((t) => t.id === tagId)?.name || "Thể loại";
+  } catch {
+    return "Thể loại";
+  }
+}
+
 export async function generateMetadata({ params }: GenreDetailPageProps) {
-  const { tagId } = await params;
-  return {
-    title: `${tagId} | MangaVerse`,
-  };
+  return { title: `Truyện ${await tagName((await params).tagId)} | MangaVerse` };
 }
 
 export default async function GenreDetailPage({ params, searchParams }: GenreDetailPageProps) {
   const { tagId } = await params;
-  const sp = await searchParams;
-  const page = Math.max(1, parseInt(sp.page || "1", 10));
-
-  try {
-    const data = await getMangaByGenre(tagId, page);
-    const totalPages = Math.ceil(data.totalItems / data.totalItemsPerPage);
-
-    return (
-      <div className="container-main pt-20 pb-12">
-        <MangaGridSection title={tagId.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())} items={data.items} />
-        {data.items.length === 0 && (
-          <div className="card p-8 text-center mt-4">
-            <p className="text-txt-muted text-sm">Không tìm thấy truyện nào.</p>
-          </div>
-        )}
-        <Pagination currentPage={page} totalPages={totalPages} baseUrl={`/genre/${tagId}`} />
-      </div>
-    );
-  } catch (error) {
-    console.error("Genre detail error:", error);
-    return (
-      <div className="container-main pt-20 pb-12">
-        <div className="card p-10 text-center">
-          <p className="text-txt-secondary">Không thể tải dữ liệu.</p>
-          <Link href="/genre" className="btn-primary mt-4 inline-flex">Quay lại</Link>
-        </div>
-      </div>
-    );
-  }
+  const page = parsePage((await searchParams).page);
+  return (
+    <MangaListPage
+      title={`Thể loại: ${await tagName(tagId)}`}
+      page={page}
+      baseUrl={`/genre/${tagId}`}
+      load={() => getMangaByTag(tagId, page)}
+    />
+  );
 }

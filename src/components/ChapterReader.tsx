@@ -1,175 +1,211 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { ChapterDetail } from "@/types/manga";
+import { useRouter } from "next/navigation";
+import { ChapterPages } from "@/types/manga";
 import { addHistory } from "@/lib/storage";
+import { chapterLabel } from "@/lib/format";
 
 interface ChapterReaderProps {
-  chapter: ChapterDetail;
-  mangaSlug: string;
-  mangaName: string;
-  mangaThumb: string;
-  prevChapterId: string | null;
-  nextChapterId: string | null;
+  chapter: ChapterPages;
+  mangaId: string;
+  mangaTitle: string;
+  mangaCover: string;
+  chapterOptions: { id: string; label: string }[]; // newest first
+  prevId: string | null;
+  nextId: string | null;
+}
+
+function ReaderNav({
+  mangaId,
+  chapterId,
+  chapterOptions,
+  prevHref,
+  nextHref,
+}: {
+  mangaId: string;
+  chapterId: string;
+  chapterOptions: { id: string; label: string }[];
+  prevHref: string | null;
+  nextHref: string | null;
+}) {
+  const router = useRouter();
+  const btn = "h-9 px-3 inline-flex items-center gap-1 rounded-md text-sm font-semibold transition-colors";
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {prevHref ? (
+        <Link href={prevHref} className={`${btn} bg-accent text-white hover:bg-accent-hover`}>‹ Trước</Link>
+      ) : (
+        <span className={`${btn} bg-white/10 text-white/30 cursor-not-allowed`}>‹ Trước</span>
+      )}
+      <select
+        value={chapterId}
+        onChange={(e) => router.push(`/manga/${mangaId}/${e.target.value}`)}
+        className="h-9 max-w-[45vw] sm:max-w-xs px-2 rounded-md bg-white text-txt text-sm outline-none"
+      >
+        {chapterOptions.map((c) => (
+          <option key={c.id} value={c.id}>{c.label}</option>
+        ))}
+      </select>
+      {nextHref ? (
+        <Link href={nextHref} className={`${btn} bg-accent text-white hover:bg-accent-hover`}>Sau ›</Link>
+      ) : (
+        <span className={`${btn} bg-white/10 text-white/30 cursor-not-allowed`}>Sau ›</span>
+      )}
+    </div>
+  );
 }
 
 export default function ChapterReader({
   chapter,
-  mangaSlug,
-  mangaName,
-  mangaThumb,
-  prevChapterId,
-  nextChapterId,
+  mangaId,
+  mangaTitle,
+  mangaCover,
+  chapterOptions,
+  prevId,
+  nextId,
 }: ChapterReaderProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<"scroll" | "page">("scroll");
+  const [hd, setHd] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const [showToolbar, setShowToolbar] = useState(true);
 
-  const pages = chapter.images.map((img) => ({
-    url: `${chapter.domain_cdn}/${chapter.chapter_path}/${img.image_file}`,
-  }));
+  useEffect(() => {
+    try {
+      setMode(localStorage.getItem("reader_mode") === "page" ? "page" : "scroll");
+      setHd(localStorage.getItem("reader_hd") === "1");
+    } catch {}
+  }, []);
+
+  const changeMode = (m: "scroll" | "page") => {
+    setMode(m);
+    try { localStorage.setItem("reader_mode", m); } catch {}
+  };
+  const toggleHd = () => {
+    setHd(!hd);
+    try { localStorage.setItem("reader_hd", hd ? "0" : "1"); } catch {}
+  };
+
+  const pages = hd && chapter.pagesHd.length ? chapter.pagesHd : chapter.pages;
+  const label = chapterLabel(chapter);
 
   useEffect(() => {
     addHistory({
-      mangaId: mangaSlug,
-      mangaTitle: mangaName,
-      coverThumb: mangaThumb,
-      chapterId: chapter.chapter_name,
-      chapterNum: chapter.chapter_name,
+      mangaId,
+      mangaTitle,
+      coverThumb: mangaCover,
+      chapterId: chapter.id,
+      chapterLabel: label,
     });
-  }, [mangaSlug, mangaName, mangaThumb, chapter.chapter_name]);
+    setCurrentPage(0);
+  }, [mangaId, mangaTitle, mangaCover, chapter.id, label]);
 
-  const prevUrl = prevChapterId ? `/manga/${mangaSlug}/${prevChapterId}` : null;
-  const nextUrl = nextChapterId ? `/manga/${mangaSlug}/${nextChapterId}` : null;
+  const prevHref = prevId ? `/manga/${mangaId}/${prevId}` : null;
+  const nextHref = nextId ? `/manga/${mangaId}/${nextId}` : null;
 
   const goNext = useCallback(() => {
     if (currentPage < pages.length - 1) {
       setCurrentPage((p) => p + 1);
-    } else if (nextUrl) {
-      window.location.href = nextUrl;
-    }
-  }, [currentPage, pages.length, nextUrl]);
+      window.scrollTo({ top: 0 });
+    } else if (nextHref) router.push(nextHref);
+  }, [currentPage, pages.length, nextHref, router]);
 
   const goPrev = useCallback(() => {
     if (currentPage > 0) {
       setCurrentPage((p) => p - 1);
-    } else if (prevUrl) {
-      window.location.href = prevUrl;
-    }
-  }, [currentPage, prevUrl]);
+      window.scrollTo({ top: 0 });
+    } else if (prevHref) router.push(prevHref);
+  }, [currentPage, prevHref, router]);
 
   useEffect(() => {
-    if (mode !== "page") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "d") goNext();
-      if (e.key === "ArrowLeft" || e.key === "a") goPrev();
+      if ((e.target as HTMLElement)?.tagName === "SELECT") return;
+      if (mode === "page") {
+        if (e.key === "ArrowRight" || e.key === "d") goNext();
+        if (e.key === "ArrowLeft" || e.key === "a") goPrev();
+      } else {
+        if (e.key === "ArrowRight" && nextHref) router.push(nextHref);
+        if (e.key === "ArrowLeft" && prevHref) router.push(prevHref);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mode, goNext, goPrev]);
+  }, [mode, goNext, goPrev, nextHref, prevHref, router]);
 
-  if (pages.length === 0) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-txt-muted text-sm">Không có trang nào để hiển thị.</p>
-      </div>
-    );
-  }
-
-  const chapterTitle = `Chapter ${chapter.chapter_name}${chapter.chapter_title ? `: ${chapter.chapter_title}` : ""}`;
+  const toggleBtn = (active: boolean) =>
+    `px-2.5 py-1 text-xs font-medium rounded ${active ? "bg-accent text-white" : "text-white/70 hover:text-white"}`;
 
   return (
-    <div className="min-h-screen bg-bg">
-      {/* Top toolbar */}
-      <div className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-200 ${showToolbar ? "translate-y-0" : "-translate-y-full"}`}>
-        <div className="bg-bg/95 backdrop-blur-sm border-b border-border px-4 py-2.5">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-            <Link href={`/manga/${mangaSlug}`} className="flex items-center gap-2 text-sm text-txt-secondary hover:text-txt transition-colors shrink-0">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline truncate max-w-[200px]">{mangaName}</span>
-            </Link>
-            <p className="text-sm text-txt truncate">{chapterTitle}</p>
-            <button
-              onClick={() => setMode(mode === "scroll" ? "page" : "scroll")}
-              className="px-2.5 py-1 text-xs text-txt-muted border border-border rounded hover:text-txt hover:border-border-light transition-colors shrink-0"
-            >
-              {mode === "scroll" ? "Trang" : "Cuộn"}
-            </button>
+    <div className="bg-[#1b1c20] min-h-screen">
+      {/* Title + settings */}
+      <div className="container-main pt-4 pb-3 text-center">
+        <nav className="text-xs text-white/50">
+          <Link href="/" className="hover:text-white">Trang chủ</Link> ›{" "}
+          <Link href={`/manga/${mangaId}`} className="hover:text-white">{mangaTitle}</Link> › {label}
+        </nav>
+        <h1 className="mt-2 text-lg font-bold text-white">
+          <Link href={`/manga/${mangaId}`} className="hover:text-accent">{mangaTitle}</Link>
+          <span className="text-white/60 font-medium"> – {label}</span>
+        </h1>
+        {chapter.title && chapter.chapter !== null && <p className="text-sm text-white/50">{chapter.title}</p>}
+      </div>
+
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-[60] bg-[#111214]/95 backdrop-blur border-y border-white/10 py-2">
+        <div className="container-main flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <ReaderNav mangaId={mangaId} chapterId={chapter.id} chapterOptions={chapterOptions} prevHref={prevHref} nextHref={nextHref} />
+          <div className="flex items-center gap-1 rounded-md bg-white/5 p-0.5">
+            <button onClick={() => changeMode("scroll")} className={toggleBtn(mode === "scroll")}>Cuộn dọc</button>
+            <button onClick={() => changeMode("page")} className={toggleBtn(mode === "page")}>Từng trang</button>
+            <button onClick={toggleHd} className={toggleBtn(hd)} title="Ảnh chất lượng cao (tốn dung lượng hơn)">HD</button>
           </div>
         </div>
       </div>
 
-      <div className="fixed top-0 left-0 right-0 h-12 z-40 cursor-pointer" onClick={() => setShowToolbar(!showToolbar)} />
-
-      {/* Content */}
-      <div className="pt-14 pb-16">
-        {mode === "scroll" ? (
-          <div className="mx-auto max-w-4xl">
-            {pages.map((page, i) => (
-              <div key={i} className="relative w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={page.url}
-                  alt={`Trang ${i + 1}`}
-                  className="w-full h-auto"
-                  loading={i < 3 ? "eager" : "lazy"}
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ))}
+      {/* Pages */}
+      {pages.length === 0 ? (
+        <p className="py-24 text-center text-sm text-white/60">Chương này không có trang nào để hiển thị.</p>
+      ) : mode === "scroll" ? (
+        <div className="mx-auto max-w-3xl">
+          {pages.map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={src}
+              src={src}
+              alt={`Trang ${i + 1}`}
+              loading={i < 3 ? "eager" : "lazy"}
+              className="block w-full h-auto min-h-[200px] bg-white/5"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="mx-auto max-w-4xl py-3">
+          <div
+            className="flex items-center justify-center min-h-[70vh] cursor-pointer select-none"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              if (e.clientX - rect.left > rect.width / 2) goNext();
+              else goPrev();
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img key={pages[currentPage]} src={pages[currentPage]} alt={`Trang ${currentPage + 1}`} className="max-h-[88vh] w-auto object-contain" />
           </div>
-        ) : (
-          <div className="mx-auto max-w-4xl">
-            <div
-              className="relative flex items-center justify-center min-h-[70vh] cursor-pointer select-none"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                if (x > rect.width / 2) goNext();
-                else goPrev();
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                key={currentPage}
-                src={pages[currentPage].url}
-                alt={`Trang ${currentPage + 1}`}
-                className="max-h-[85vh] w-auto object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <button onClick={goPrev} disabled={currentPage === 0 && !prevUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">Trước</button>
-              <span className="text-sm text-txt-muted">{currentPage + 1} / {pages.length}</span>
-              <button onClick={goNext} disabled={currentPage === pages.length - 1 && !nextUrl} className="px-3 py-1.5 text-sm text-txt-secondary border border-border rounded hover:text-txt transition-colors disabled:opacity-30">Sau</button>
-            </div>
-          </div>
-        )}
-      </div>
+          <p className="mt-2 text-center text-sm text-white/60">
+            Trang {currentPage + 1} / {pages.length} · bấm nửa phải/trái ảnh hoặc phím ← → để lật
+          </p>
+          {/* preload the next page */}
+          {pages[currentPage + 1] && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pages[currentPage + 1]} alt="" className="hidden" />
+          )}
+        </div>
+      )}
 
       {/* Bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-sm border-t border-border px-4 py-2.5">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          {prevUrl ? (
-            <Link href={prevUrl} className="text-sm text-txt-secondary hover:text-txt transition-colors flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              Ch. trước
-            </Link>
-          ) : <div />}
-          <span className="text-xs text-txt-muted">
-            {mode === "scroll" ? `${pages.length} trang` : `${currentPage + 1}/${pages.length}`}
-          </span>
-          {nextUrl ? (
-            <Link href={nextUrl} className="text-sm text-accent hover:text-accent-hover transition-colors flex items-center gap-1">
-              Ch. sau
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            </Link>
-          ) : <div />}
-        </div>
+      <div className="container-main py-6">
+        <ReaderNav mangaId={mangaId} chapterId={chapter.id} chapterOptions={chapterOptions} prevHref={prevHref} nextHref={nextHref} />
       </div>
     </div>
   );
