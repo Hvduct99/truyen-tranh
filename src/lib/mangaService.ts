@@ -253,21 +253,24 @@ export async function listManga({
  * Hand-picked classics for the top of the homepage. Each id is the MangaDex
  * entry that still has readable chapters (chapter counts as of 2026-10-19);
  * several big titles have a dead main entry, e.g. One Piece only works in the
- * colored edition.
+ * colored edition. Titles with Vietnamese chapters come first, English-only
+ * ones last.
  */
 const CLASSIC_IDS = [
-  "a2c1d849-af05-4bbc-b2a7-866ebb10331f", // One Piece (colored), 763
+  // Vietnamese
   "d8a959f7-648e-4c8d-8f23-f1f3f8e129f3", // One Punch-Man, 64
-  "ea3122bb-0c28-4669-8686-d6df1274512f", // Grappler Baki, 372
   "0b3f409c-2bda-40b7-9d1d-1039c0b7d62a", // Hanma Baki, 313
   "40bc649f-7b49-4645-859e-6cd94136e722", // Dragon Ball, 520
-  "7f30dfc3-0b80-4dcc-a3b9-0cd746fac005", // Detective Conan, 923
+  "7f30dfc3-0b80-4dcc-a3b9-0cd746fac005", // Detective Conan, 923 (688 vi)
   "e36da8b0-feca-46dd-9120-d5dc2f3feae8", // Doraemon, 765
   "db692d58-4b13-4174-ae8c-30c515c0689c", // Hunter x Hunter, 423
-  "319df2e2-e6a6-4e3a-a31c-68539c140a84", // Slam Dunk, 278
   "a77742b1-befd-49a4-bff5-1ad4e6b0ef7b", // Chainsaw Man, 233
   "4141c5dc-c525-4df5-afd7-cc7d192a832f", // Blue Lock, 74
   "cfc3d743-bd89-48e2-991f-63e680cc4edf", // Dr. Stone, 112
+  // English only
+  "a2c1d849-af05-4bbc-b2a7-866ebb10331f", // One Piece (colored), 763
+  "ea3122bb-0c28-4669-8686-d6df1274512f", // Grappler Baki, 372
+  "319df2e2-e6a6-4e3a-a31c-68539c140a84", // Slam Dunk, 278
 ];
 
 export async function getClassicManga(): Promise<Manga[]> {
