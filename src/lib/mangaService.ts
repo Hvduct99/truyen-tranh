@@ -261,35 +261,70 @@ export const getMangaByTag = (tagId: string, page = 1) =>
 export const searchManga = (keyword: string, page = 1) =>
   listManga({ page, order: "relevance", title: keyword, langs: READ_LANGS });
 
+const CHAPTER_BATCH = 100;
+
 /**
  * Manga with the most recently uploaded Vietnamese chapters, each carrying
  * up to 3 of its newest chapters (NetTruyen-style "latest updates" grid).
+ *
+ * Driven by the global chapter feed rather than /manga: /chapter can only
+ * filter by a single manga, and this way every listed manga is guaranteed to
+ * have a readable chapter. Each page is one batch of 100 chapters.
  */
 export async function getLatestUpdates(page = 1, perPage = PER_PAGE): Promise<MangaListResponse> {
-  const list = await listManga({ page, perPage, order: "latestUploadedChapter" });
-  if (list.items.length === 0) return list;
+  const json = await md(
+    "/chapter",
+    {
+      limit: CHAPTER_BATCH,
+      offset: offsetFor(page, CHAPTER_BATCH),
+      "translatedLanguage[]": LIST_LANGS,
+      "contentRating[]": CONTENT_RATING,
+      "order[readableAt]": "desc",
+      includeExternalUrl: 0,
+      includeEmptyPages: 0,
+    },
+    120
+  );
 
-  // One chapter query for the whole page, then bucket by manga.
-  const json = await md("/chapter", {
-    limit: 100,
-    "manga[]": list.items.map((m) => m.id),
-    "translatedLanguage[]": LIST_LANGS,
-    "contentRating[]": CONTENT_RATING,
-    "order[readableAt]": "desc",
-    includeExternalUrl: 0,
-  });
+  // Bucket by manga, keeping the order in which each manga first appears.
   const byManga = new Map<string, ChapterInfo[]>();
   for (const c of json.data || []) {
     const mangaId = (c.relationships || []).find((r: any) => r.type === "manga")?.id;
     if (!mangaId) continue;
-    const bucket = byManga.get(mangaId) || [];
+    const bucket = byManga.get(mangaId);
+    if (!bucket) {
+      if (byManga.size < perPage) byManga.set(mangaId, [normaliseChapter(c)]);
+      continue;
+    }
     const ch = normaliseChapter(c);
     // skip duplicate uploads of the same chapter number by different groups
     if (bucket.length < 3 && !bucket.some((b) => b.chapter === ch.chapter)) bucket.push(ch);
-    byManga.set(mangaId, bucket);
   }
-  for (const m of list.items) m.latestChapters = byManga.get(m.id) || [];
-  return list;
+
+  const pages = Math.ceil(Math.min(json.total || 0, MAX_OFFSET) / CHAPTER_BATCH);
+  const result: MangaListResponse = { items: [], total: pages * perPage, page, perPage };
+  if (byManga.size === 0) return result;
+
+  const mangaJson = await md(
+    "/manga",
+    {
+      limit: byManga.size,
+      "ids[]": Array.from(byManga.keys()),
+      "contentRating[]": CONTENT_RATING,
+      "includes[]": MANGA_INCLUDES,
+    },
+    120
+  );
+  const found = new Map<string, Manga>();
+  for (const item of mangaJson.data || []) found.set(item.id, normaliseManga(item));
+
+  for (const [id, chapters] of Array.from(byManga)) {
+    const m = found.get(id);
+    if (!m) continue;
+    m.latestChapters = chapters;
+    result.items.push(m);
+  }
+  return result;
 }
 
 export async function getManga(id: string): Promise<Manga> {
