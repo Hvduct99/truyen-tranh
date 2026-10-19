@@ -3,13 +3,14 @@ import MangaGridSection from "@/components/MangaGridSection";
 import TopList from "@/components/TopList";
 import CoverImage from "@/components/CoverImage";
 import ErrorBox from "@/components/ErrorBox";
-import { getPopularManga, getLatestUpdates, getCompletedManga, getTags } from "@/lib/mangaService";
+import { getClassicManga, getPopularManga, getLatestUpdates, getCompletedManga, getTags } from "@/lib/mangaService";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   // allSettled: one failing MangaDex call shouldn't blank the whole homepage
-  const [popular, latest, completed, tags] = await Promise.allSettled([
+  const [classics, popular, latest, completed, tags] = await Promise.allSettled([
+    getClassicManga(),
     getPopularManga(1, 12),
     getLatestUpdates(1, 24),
     getCompletedManga(1),
@@ -26,6 +27,12 @@ export default async function Home() {
 
   return (
     <div className="container-main py-4 space-y-6">
+      {classics.status === "fulfilled" && classics.value.length > 0 && (
+        <div className="card p-3 sm:p-4">
+          <MangaGridSection title="Truyện kinh điển" items={classics.value} columns={6} />
+        </div>
+      )}
+
       {featured.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
